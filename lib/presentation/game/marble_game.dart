@@ -57,7 +57,7 @@ class MarbleGame extends FlameGame {
   }
 
   @override
-  Color backgroundColor() => const Color(0xFFE1BEE7);
+  Color backgroundColor() => Colors.transparent;
 
   Set<Marble> findGroup(Marble m) {
     return groups.firstWhere((g) => g.contains(m), orElse: () => {m});

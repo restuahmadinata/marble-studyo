@@ -8,30 +8,40 @@ class GameScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Layer 1: Game Engine (Paling bawah)
-          GameWidget(
-            game: MarbleGame(),
-          ),
-          
-          // Layer 2: UI Overlay (Judul, Skor, Tombol) - Nanti kita isi
-          Positioned(
-            top: 50,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Text(
-                "PERMAINAN BIJI: CALON GOTY 2069!!!",
-                style: TextStyle(
-                  fontSize: 24, 
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+      backgroundColor: const Color(0xFFE1BEE7),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Layer 1: Game Engine dengan Container Boundary
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 36.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.purple.shade300,
+                    width: 3.0,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  color: const Color(0xFFE1BEE7),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFB34FB4),
+                      offset: const Offset(4, 4),
+                      blurRadius: 0,
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(17),
+                  child: GameWidget(
+                    game: MarbleGame(),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
