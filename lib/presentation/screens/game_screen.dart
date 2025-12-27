@@ -22,12 +22,11 @@ class GameScreen extends StatelessWidget {
             right: 0,
             child: Center(
               child: Text(
-                "Misi: Cari Kelompok 8!",
+                "PERMAINAN BIJI: CALON GOTY 2069!!!",
                 style: TextStyle(
                   fontSize: 24, 
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [Shadow(blurRadius: 10, color: Colors.black)],
+                  color: Colors.black,
                 ),
               ),
             ),
