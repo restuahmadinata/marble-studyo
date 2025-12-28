@@ -115,8 +115,8 @@ class Marble extends PositionComponent with HasGameReference<MarbleGame>, DragCa
     // Boundaries (Container boundaries)
     double minX = radius;
     double maxX = game.size.x - radius;
-    double minY = radius;
-    double maxY = game.size.y - radius;
+    double minY = game.topBoundary + radius;
+    double maxY = game.bottomBoundary - radius;
 
     position.x = position.x.clamp(minX, maxX);
     position.y = position.y.clamp(minY, maxY);

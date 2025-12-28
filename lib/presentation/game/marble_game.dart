@@ -15,6 +15,8 @@ class MarbleGame extends FlameGame {
   final double connectionDistance = 45.0; 
 
   List<Set<Marble>> groups = [];
+  late double topBoundary;
+  late double bottomBoundary;
 
   @override
   FutureOr<void> onLoad() async {
@@ -66,6 +68,10 @@ class MarbleGame extends FlameGame {
     final double topStart = 240;
     final double gap = 22;
 
+    // Set boundaries to match the card area
+    topBoundary = topStart;
+    bottomBoundary = topStart + 2 * (cardHeight + gap) + cardHeight;
+
     add(NeoCard(
       baseColor: c1,
       position: Vector2(leftMargin, topStart),
@@ -107,6 +113,9 @@ class MarbleGame extends FlameGame {
       // Penting: Update rumah formasi
       m.originalFormPosition += delta; 
     }
+    
+    // Apply collision resolution immediately after moving
+    _resolveMarbleCardCollisions();
   }
 
   void setGroupPriority(Marble leader, int priority) {
