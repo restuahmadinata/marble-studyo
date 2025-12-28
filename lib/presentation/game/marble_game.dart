@@ -4,6 +4,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'components/marble.dart';
 import 'components/line_layer.dart';
+import 'components/neo_card.dart';
 
 class MarbleGame extends FlameGame {
   late LineLayer _lineLayer;
@@ -54,6 +55,32 @@ class MarbleGame extends FlameGame {
     _lineLayer = LineLayer();
     _lineLayer.priority = 200; 
     add(_lineLayer);
+
+    const Color c1 = Color(0xFFE5A882);
+    const Color c2 = Color(0xFFDEE385);
+    const Color c3 = Color(0xFF7BDDE6);
+
+    final double cardWidth = 70;
+    final double cardHeight = 140;
+    final double leftMargin = 0;
+    final double topStart = 240;
+    final double gap = 22;
+
+    add(NeoCard(
+      baseColor: c1,
+      position: Vector2(leftMargin, topStart),
+      size: Vector2(cardWidth, cardHeight),
+    ));
+    add(NeoCard(
+      baseColor: c2,
+      position: Vector2(leftMargin, topStart + cardHeight + gap),
+      size: Vector2(cardWidth, cardHeight),
+    ));
+    add(NeoCard(
+      baseColor: c3,
+      position: Vector2(leftMargin, topStart + 2 * (cardHeight + gap)),
+      size: Vector2(cardWidth, cardHeight),
+    ));
   }
 
   @override
@@ -200,5 +227,61 @@ class MarbleGame extends FlameGame {
       }
     }
     _lineLayer.connectionsToDraw = permanentConnections;
+
+    // Handle collisions of marbles with neo cards (rectangles)
+    _resolveMarbleCardCollisions();
+  }
+
+  void _resolveMarbleCardCollisions() {
+    final marbles = children.whereType<Marble>().toList();
+    final cards = children.whereType<NeoCard>().toList();
+
+    for (final m in marbles) {
+      for (final card in cards) {
+        final double r = m.radius;
+        // Rect bounds in game space (card anchored at top-left)
+        final double x0 = card.position.x;
+        final double y0 = card.position.y;
+        final double x1 = x0 + card.size.x;
+        final double y1 = y0 + card.size.y;
+
+        // Closest point from circle center to rect
+        final double cx = m.position.x.clamp(x0, x1);
+        final double cy = m.position.y.clamp(y0, y1);
+        final Vector2 closest = Vector2(cx, cy);
+        final Vector2 diff = m.position - closest;
+        final double dist = diff.length;
+
+        if (dist < r) {
+          // Penetration resolution
+          if (dist > 0) {
+            final double penetration = r - dist;
+            final Vector2 push = diff.normalized() * penetration;
+            m.position += push;
+            m.targetPosition += push;
+          } else {
+            // Center exactly on/inside rect; push out along the minimal axis
+            final double leftPen = (m.position.x - x0).abs();
+            final double rightPen = (x1 - m.position.x).abs();
+            final double topPen = (m.position.y - y0).abs();
+            final double bottomPen = (y1 - m.position.y).abs();
+
+            Vector2 push = Vector2.zero();
+            final double minPen = [leftPen, rightPen, topPen, bottomPen].reduce(min);
+            if (minPen == leftPen) {
+              push = Vector2(-(r - leftPen), 0);
+            } else if (minPen == rightPen) {
+              push = Vector2((r - rightPen), 0);
+            } else if (minPen == topPen) {
+              push = Vector2(0, -(r - topPen));
+            } else {
+              push = Vector2(0, (r - bottomPen));
+            }
+            m.position += push;
+            m.targetPosition += push;
+          }
+        }
+      }
+    }
   }
 }
