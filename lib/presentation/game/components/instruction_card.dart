@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class InstructionCard extends StatelessWidget {
   final String instruction;
 
-  const InstructionCard({
-    super.key,
-    required this.instruction,
-  });
+  const InstructionCard({super.key, required this.instruction});
 
   @override
   Widget build(BuildContext context) {

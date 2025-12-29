@@ -15,9 +15,7 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Marble Grouping',
       debugShowCheckedModeBanner: false, // Hilangkan banner debug
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: const GameScreen(), // Langsung buka layar game
     );
   }

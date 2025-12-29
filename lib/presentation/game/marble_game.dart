@@ -4,37 +4,66 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'components/marble.dart';
 import 'components/line_layer.dart';
-import 'components/neo_card.dart';
+import 'components/marble_card.dart';
 
 class MarbleGame extends FlameGame {
   late LineLayer _lineLayer;
+  final int marbleCount;
 
   List<Set<Marble>> groups = [];
   late double topBoundary;
   late double bottomBoundary;
 
+  MarbleGame({this.marbleCount = 10});
+
   @override
   FutureOr<void> onLoad() async {
     camera.viewfinder.visibleGameSize = size;
-    
-    int totalMarbles = 10; 
-    double minSpawnDistance = 80.0; 
+
+    await _initializeGame();
+  }
+
+  Future<void> _initializeGame() async {
+    int totalMarbles = marbleCount;
+
+    // Calculate dynamic radius based on marble count
+    double dynamicRadius;
+    if (totalMarbles <= 18) {
+      dynamicRadius = 15.0;
+    } else if (totalMarbles <= 24) {
+      dynamicRadius = 12.0;
+    } else {
+      dynamicRadius = 10.0;
+    }
+
+    // Adjust minimum spawn distance based on radius
+    double minSpawnDistance = dynamicRadius * 2.5;
     Random rng = Random();
-    
+
+    // Left boundary ends at card area (card width + small margin)
+    final double leftBoundary = 80.0;
+    final double rightMargin = 50.0;
+    final double topMargin = 150.0;
+    final double bottomMargin = 50.0;
+
     for (int i = 0; i < totalMarbles; i++) {
       Vector2? candidatePosition;
       bool positionFound = false;
       int attempts = 0;
 
-      while (!positionFound && attempts < 200) { 
+      while (!positionFound && attempts < 300) {
         attempts++;
-        double posX = 50 + rng.nextDouble() * (size.x - 100);
-        double posY = 150 + rng.nextDouble() * (size.y - 200);
+        double posX =
+            leftBoundary +
+            rng.nextDouble() * (size.x - leftBoundary - rightMargin);
+        double posY =
+            topMargin + rng.nextDouble() * (size.y - topMargin - bottomMargin);
         candidatePosition = Vector2(posX, posY);
 
         bool isTooClose = false;
         for (var existing in children.whereType<Marble>()) {
-          if (existing.position.distanceTo(candidatePosition) < minSpawnDistance) {
+          if (existing.position.distanceTo(candidatePosition) <
+              minSpawnDistance) {
             isTooClose = true;
             break;
           }
@@ -43,45 +72,74 @@ class MarbleGame extends FlameGame {
       }
 
       if (positionFound && candidatePosition != null) {
-        Marble m = Marble(startX: candidatePosition.x, startY: candidatePosition.y);
+        Marble m = Marble(
+          startX: candidatePosition.x,
+          startY: candidatePosition.y,
+          radius: dynamicRadius,
+        );
         add(m);
         groups.add({m});
       }
     }
 
-    _lineLayer = LineLayer();
-    _lineLayer.priority = 200; 
-    add(_lineLayer);
+    // Only add line layer if not already added
+    if (!children.whereType<LineLayer>().isNotEmpty) {
+      _lineLayer = LineLayer();
+      _lineLayer.priority = 200;
+      add(_lineLayer);
+    }
 
-    const Color c1 = Color(0xFFE5A882);
-    const Color c2 = Color(0xFFDEE385);
-    const Color c3 = Color(0xFF7BDDE6);
+    // Only add cards if not already added
+    if (!children.whereType<NeoCard>().isNotEmpty) {
+      const Color c1 = Color(0xFFE5A882);
+      const Color c2 = Color(0xFFDEE385);
+      const Color c3 = Color(0xFF7BDDE6);
 
-    final double cardWidth = 70;
-    final double cardHeight = 140;
-    final double leftMargin = 0;
-    final double topStart = 240;
-    final double gap = 22;
+      final double cardWidth = 70;
+      final double cardHeight = 140;
+      final double leftMargin = 0;
+      final double topStart = 240;
+      final double gap = 22;
 
-    // Set boundaries to match the card area
-    topBoundary = topStart;
-    bottomBoundary = topStart + 2 * (cardHeight + gap) + cardHeight;
+      // Set boundaries to match the card area
+      topBoundary = topStart;
+      bottomBoundary = topStart + 2 * (cardHeight + gap) + cardHeight;
 
-    add(NeoCard(
-      baseColor: c1,
-      position: Vector2(leftMargin, topStart),
-      size: Vector2(cardWidth, cardHeight),
-    ));
-    add(NeoCard(
-      baseColor: c2,
-      position: Vector2(leftMargin, topStart + cardHeight + gap),
-      size: Vector2(cardWidth, cardHeight),
-    ));
-    add(NeoCard(
-      baseColor: c3,
-      position: Vector2(leftMargin, topStart + 2 * (cardHeight + gap)),
-      size: Vector2(cardWidth, cardHeight),
-    ));
+      add(
+        NeoCard(
+          baseColor: c1,
+          position: Vector2(leftMargin, topStart),
+          size: Vector2(cardWidth, cardHeight),
+        ),
+      );
+      add(
+        NeoCard(
+          baseColor: c2,
+          position: Vector2(leftMargin, topStart + cardHeight + gap),
+          size: Vector2(cardWidth, cardHeight),
+        ),
+      );
+      add(
+        NeoCard(
+          baseColor: c3,
+          position: Vector2(leftMargin, topStart + 2 * (cardHeight + gap)),
+          size: Vector2(cardWidth, cardHeight),
+        ),
+      );
+    }
+  }
+
+  void resetGame() {
+    // Remove all marbles
+    children.whereType<Marble>().toList().forEach((marble) {
+      marble.removeFromParent();
+    });
+
+    // Clear groups
+    groups.clear();
+
+    // Reinitialize game with new marble count
+    _initializeGame();
   }
 
   @override
@@ -104,11 +162,11 @@ class MarbleGame extends FlameGame {
         // Posisi aslinya akan mengejar target ini pelan-pelan (Inersia dari marble.dart)
         m.targetPosition += delta;
       }
-      
+
       // Penting: Update rumah formasi
-      m.originalFormPosition += delta; 
+      m.originalFormPosition += delta;
     }
-    
+
     // Apply collision resolution immediately after moving
     _resolveMarbleCardCollisions();
   }
@@ -122,22 +180,22 @@ class MarbleGame extends FlameGame {
 
   void disbandGroup(Marble target) {
     Set<Marble> oldGroup = findGroup(target);
-    
+
     if (oldGroup.length > 1) {
       groups.remove(oldGroup);
-      
+
       Vector2 center = Vector2.zero();
       for (var m in oldGroup) center += m.position;
       center /= oldGroup.length.toDouble();
 
       for (var m in oldGroup) {
-        groups.add({m}); 
+        groups.add({m});
         m.isConnected = false;
-        
+
         Vector2 direction = m.position - center;
-        if (direction.length == 0) direction = Vector2(1, 0); 
+        if (direction.length == 0) direction = Vector2(1, 0);
         direction.normalize();
-        
+
         m.scatter(direction);
       }
     }
@@ -146,7 +204,7 @@ class MarbleGame extends FlameGame {
   @override
   void update(double dt) {
     super.update(dt);
-    
+
     final allMarbles = children.whereType<Marble>().toList();
 
     for (int i = 0; i < allMarbles.length; i++) {
@@ -154,56 +212,58 @@ class MarbleGame extends FlameGame {
         Marble mA = allMarbles[i];
         Marble mB = allMarbles[j];
         double dist = mA.position.distanceTo(mB.position);
-        
+
         // Calculate dynamic distances based on marble radius
-        double collisionDistance = (mA.radius + mB.radius); // Sum of radii (diameter if same size)
-        double connectionDistance = collisionDistance + 4.0; // Slightly more for easy connection
+        double collisionDistance =
+            (mA.radius + mB.radius); // Sum of radii (diameter if same size)
+        double connectionDistance =
+            collisionDistance + 4.0; // Slightly more for easy connection
 
         // --- 1. COLLISION (Tolak Menolak - Biar gak numpuk) ---
         if (dist < collisionDistance && dist > 0) {
-           Vector2 dir = (mA.position - mB.position)..normalize();
-           double overlap = collisionDistance - dist;
-           Vector2 pushVector = dir * (overlap / 2);
+          Vector2 dir = (mA.position - mB.position)..normalize();
+          double overlap = collisionDistance - dist;
+          Vector2 pushVector = dir * (overlap / 2);
 
-           if (!mA.isBeingDragged) {
-             mA.position += pushVector;
-             mA.targetPosition += pushVector;
-           }
-           if (!mB.isBeingDragged) {
-             mB.position -= pushVector;
-             mB.targetPosition -= pushVector;
-           }
+          if (!mA.isBeingDragged) {
+            mA.position += pushVector;
+            mA.targetPosition += pushVector;
+          }
+          if (!mB.isBeingDragged) {
+            mB.position -= pushVector;
+            mB.targetPosition -= pushVector;
+          }
         }
-        
+
         // --- 2. COHESION (Tarik Menarik - Biar Nempel 0 Jarak) ---
         // Syarat: Mereka satu grup & Jaraknya lebih dari collision distance
         if (mA.isConnected && mB.isConnected && dist > collisionDistance) {
-            Set<Marble> groupA = findGroup(mA);
-            Set<Marble> groupB = findGroup(mB);
-            
-            // Jika mereka SATU GRUP dan jaraknya agak renggang (akibat drag inersia)
-            // Tarik mereka kembali mendekat (Snap Effect)
-            if (groupA == groupB) {
-               // Hitung vektor tarik
-               Vector2 pullDir = (mB.position - mA.position)..normalize();
-               // Kekuatan tarik (Adjustable) - Cukup kuat untuk snap back
-               double pullStrength = 50.0 * dt; 
-               
-               // Jangan tarik kalau sedang didrag user (biar user bisa bikin gap)
-               if (!mA.isBeingDragged) {
-                 mA.targetPosition += pullDir * pullStrength;
-               }
-               if (!mB.isBeingDragged) {
-                 mB.targetPosition -= pullDir * pullStrength;
-               }
+          Set<Marble> groupA = findGroup(mA);
+          Set<Marble> groupB = findGroup(mB);
+
+          // Jika mereka SATU GRUP dan jaraknya agak renggang (akibat drag inersia)
+          // Tarik mereka kembali mendekat (Snap Effect)
+          if (groupA == groupB) {
+            // Hitung vektor tarik
+            Vector2 pullDir = (mB.position - mA.position)..normalize();
+            // Kekuatan tarik (Adjustable) - Cukup kuat untuk snap back
+            double pullStrength = 50.0 * dt;
+
+            // Jangan tarik kalau sedang didrag user (biar user bisa bikin gap)
+            if (!mA.isBeingDragged) {
+              mA.targetPosition += pullDir * pullStrength;
             }
+            if (!mB.isBeingDragged) {
+              mB.targetPosition -= pullDir * pullStrength;
+            }
+          }
         }
 
         // --- 3. CONNECTION LOGIC ---
         if (dist < connectionDistance) {
           bool isDraggingA = mA.isBeingDragged;
           bool isDraggingB = mB.isBeingDragged;
-          
+
           if (isDraggingA || isDraggingB) {
             Set<Marble> groupA = findGroup(mA);
             Set<Marble> groupB = findGroup(mB);
@@ -216,7 +276,7 @@ class MarbleGame extends FlameGame {
               groups.remove(groupB);
               for (var m in groupA) {
                 m.isConnected = true;
-                m.priority = mA.priority; 
+                m.priority = mA.priority;
               }
             }
           }
@@ -230,7 +290,7 @@ class MarbleGame extends FlameGame {
       List<Marble> members = group.toList();
       for (int i = 0; i < members.length; i++) {
         for (int j = i + 1; j < members.length; j++) {
-            permanentConnections.add([members[i].position, members[j].position]);
+          permanentConnections.add([members[i].position, members[j].position]);
         }
       }
     }
@@ -275,7 +335,12 @@ class MarbleGame extends FlameGame {
             final double bottomPen = (y1 - m.position.y).abs();
 
             Vector2 push = Vector2.zero();
-            final double minPen = [leftPen, rightPen, topPen, bottomPen].reduce(min);
+            final double minPen = [
+              leftPen,
+              rightPen,
+              topPen,
+              bottomPen,
+            ].reduce(min);
             if (minPen == leftPen) {
               push = Vector2(-(r - leftPen), 0);
             } else if (minPen == rightPen) {

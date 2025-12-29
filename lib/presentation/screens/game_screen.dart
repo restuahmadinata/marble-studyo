@@ -3,16 +3,38 @@ import 'package:flame/game.dart';
 import 'package:get/get.dart';
 import '../game/marble_game.dart';
 import '../game/controllers/game_controller.dart';
-import '../game/components/question_equals_card.dart';
+import '../game/components/question_card.dart';
 import '../game/components/instruction_card.dart';
 
-class GameScreen extends StatelessWidget {
+class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
 
   @override
+  State<GameScreen> createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  late GameController controller;
+  late MarbleGame game;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(GameController());
+    game = MarbleGame(marbleCount: controller.marbleCount);
+
+    // Listen to reset changes
+    ever(controller.shouldResetGame, (shouldReset) {
+      if (shouldReset) {
+        setState(() {
+          game = MarbleGame(marbleCount: controller.marbleCount);
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final GameController controller = Get.put(GameController());
-    
     return Scaffold(
       backgroundColor: const Color(0xFFE1BEE7),
       body: SafeArea(
@@ -41,13 +63,18 @@ class GameScreen extends StatelessWidget {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const InstructionCard(instruction: "Find the result of the division"),
-                    const QuestionEqualsCard(question: "24 ÷ 3"),
+                    const InstructionCard(
+                      instruction: "Find the result of the division",
+                    ),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(17),
                       clipBehavior: Clip.none,
-                      child: GameWidget(game: MarbleGame()),
+                      child: GameWidget(
+                        key: ValueKey(controller.marbleCount),
+                        game: game,
+                      ),
                     ),
+                    const QuestionEqualsCard(),
                   ],
                 ),
               ),
@@ -97,6 +124,4 @@ class GameScreen extends StatelessWidget {
       ),
     );
   }
-
-
 }
