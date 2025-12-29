@@ -5,10 +5,9 @@ import 'package:flutter/material.dart';
 import '../marble_game.dart';
 
 class Marble extends PositionComponent with HasGameReference<MarbleGame>, DragCallbacks, TapCallbacks {
-  final double radius = 20;
+  final double radius = 15;
   final Paint _paint;
-  final Paint _centerDotPaint;
-  final Paint _outlinePaint; 
+  final Paint _centerDotPaint; 
 
   late Vector2 targetPosition;
   late Vector2 originalFormPosition; 
@@ -27,14 +26,10 @@ class Marble extends PositionComponent with HasGameReference<MarbleGame>, DragCa
     required double startX,
     required double startY,
   }) : _paint = Paint()..color = Colors.purple,
-       _outlinePaint = Paint()
-          ..color = Colors.purpleAccent.shade100 
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3.0,
        _centerDotPaint = Paint()..color = Colors.white.withValues(alpha: 0.5), 
        super(
          position: Vector2(startX, startY),
-         size: Vector2.all(40),
+         size: Vector2.all(30),
          anchor: Anchor.center,
          priority: 10,
        ) {
@@ -57,7 +52,6 @@ class Marble extends PositionComponent with HasGameReference<MarbleGame>, DragCa
     }
     
     canvas.drawCircle(Offset(size.x / 2, size.y / 2), radius, _paint);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), radius, _outlinePaint);
 
     if (isConnected) {
       canvas.drawCircle(Offset(size.x / 2, size.y / 2), 4, _centerDotPaint);

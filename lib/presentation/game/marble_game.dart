@@ -8,11 +8,6 @@ import 'components/neo_card.dart';
 
 class MarbleGame extends FlameGame {
   late LineLayer _lineLayer;
-  
-  final double collisionDistance = 40.0; 
-  // Connection distance dilebihkan sedikit (45) biar gampang nyambung
-  // Tapi nanti Kohesi akan memaksa mereka nempel jadi 40.
-  final double connectionDistance = 45.0; 
 
   List<Set<Marble>> groups = [];
   late double topBoundary;
@@ -159,6 +154,10 @@ class MarbleGame extends FlameGame {
         Marble mA = allMarbles[i];
         Marble mB = allMarbles[j];
         double dist = mA.position.distanceTo(mB.position);
+        
+        // Calculate dynamic distances based on marble radius
+        double collisionDistance = (mA.radius + mB.radius); // Sum of radii (diameter if same size)
+        double connectionDistance = collisionDistance + 4.0; // Slightly more for easy connection
 
         // --- 1. COLLISION (Tolak Menolak - Biar gak numpuk) ---
         if (dist < collisionDistance && dist > 0) {
@@ -177,7 +176,7 @@ class MarbleGame extends FlameGame {
         }
         
         // --- 2. COHESION (Tarik Menarik - Biar Nempel 0 Jarak) ---
-        // Syarat: Mereka satu grup & Jaraknya lebih dari 40
+        // Syarat: Mereka satu grup & Jaraknya lebih dari collision distance
         if (mA.isConnected && mB.isConnected && dist > collisionDistance) {
             Set<Marble> groupA = findGroup(mA);
             Set<Marble> groupB = findGroup(mB);
