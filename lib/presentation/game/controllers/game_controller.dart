@@ -36,14 +36,72 @@ class GameController extends GetxController {
 
   void checkAnswer() {
     Get.dialog(
-      AlertDialog(
-        title: const Text('Answer Checked!'),
-        content: const Text(
-          'This is a dummy dialog. Your answer checking logic will go here.',
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: Color(0xFF5FB592), width: 3),
         ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('OK')),
-        ],
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF83E4B8),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF5FB592), width: 3),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0xFF5FB592),
+                offset: Offset(6, 6),
+                blurRadius: 0,
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Answer Checked!',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'This is a dummy dialog. Your answer checking logic will go here.',
+                style: TextStyle(fontSize: 16, color: Colors.black),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () => Get.back(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF5FB592), width: 2),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0xFF5FB592),
+                        offset: Offset(4, 4),
+                        blurRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

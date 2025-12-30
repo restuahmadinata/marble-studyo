@@ -55,24 +55,106 @@ class QuestionEqualsCard extends StatelessWidget {
                         showDialog(
                           context: context,
                           builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text('Reset Game'),
-                              content: const Text(
-                                'Are you sure you want to reset the game?',
+                            return Dialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: const BorderSide(color: Color(0xFF5a1d8c), width: 3),
                               ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  child: const Text('Cancel'),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF7e4db8),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF5a1d8c), width: 3),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0xFF5a1d8c),
+                                      offset: Offset(6, 6),
+                                      blurRadius: 0,
+                                    ),
+                                  ],
                                 ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                    controller.resetGame();
-                                  },
-                                  child: const Text('Reset'),
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'Reset Game',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      'Are you sure you want to reset the game?',
+                                      style: TextStyle(fontSize: 16, color: Colors.white),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () => Navigator.of(context).pop(),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: const Color(0xFF5a1d8c), width: 2),
+                                              boxShadow: const [
+                                                BoxShadow(
+                                                  color: Color(0xFF5a1d8c),
+                                                  offset: Offset(4, 4),
+                                                  blurRadius: 0,
+                                                ),
+                                              ],
+                                            ),
+                                            child: const Text(
+                                              'Cancel',
+                                              style: TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.of(context).pop();
+                                            controller.resetGame();
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFE5A882),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: const Color(0xFF5a1d8c), width: 2),
+                                              boxShadow: const [
+                                                BoxShadow(
+                                                  color: Color(0xFF5a1d8c),
+                                                  offset: Offset(4, 4),
+                                                  blurRadius: 0,
+                                                ),
+                                              ],
+                                            ),
+                                            child: const Text(
+                                              'Reset',
+                                              style: TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             );
                           },
                         );
