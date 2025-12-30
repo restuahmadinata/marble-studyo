@@ -168,8 +168,8 @@ class QuestionEqualsCard extends StatelessWidget {
           // Equals Card
           Positioned(
             top: 190,
-            left: 100,
-            right: 100,
+            left: 120,
+            right: 120,
             child: Container(
               decoration: BoxDecoration(
                 color: const Color(0xFF561f96),
@@ -186,13 +186,14 @@ class QuestionEqualsCard extends StatelessWidget {
               padding: EdgeInsets.zero,
               child: const SizedBox(
                 height: 40,
-                child: Center(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 12),
                   child: Text(
                     "=",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 52.0,
-                      height: 0.7,
+                      height: 0.1,
                     ),
                     textAlign: TextAlign.center,
                   ),

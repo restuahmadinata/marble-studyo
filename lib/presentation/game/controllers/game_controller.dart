@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../marble_game.dart';
 import '../components/marble_card.dart';
 
@@ -87,14 +88,14 @@ class GameController extends GetxController {
   void _showSuccessDialog() {
     // Random success messages for kids
     final List<String> successTitles = [
-      '🎉 Awesome!',
-      '🎉 Fantastic!',
-      '🎉 Super!',
-      '🎉 Amazing!',
-      '🎉 Brilliant!',
-      '🎉 Wonderful!',
-      '🎉 Excellent!',
-      '🎉 Perfect!',
+      'Awesome!',
+      'Fantastic!',
+      'Super!',
+      'Amazing!',
+      'Brilliant!',
+      'Wonderful!',
+      'Excellent!',
+      'Perfect!',
     ];
 
     final List<String> successMessages = [
@@ -116,16 +117,16 @@ class GameController extends GetxController {
       Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFF5FB592), width: 3),
+          side: const BorderSide(color: Color(0xFF2D6B4F), width: 3),
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF83E4B8),
+            color: const Color(0xFF3A8A68),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF5FB592), width: 3),
+            border: Border.all(color: const Color(0xFF2D6B4F), width: 3),
             boxShadow: const [
               BoxShadow(
-                color: Color(0xFF5FB592),
+                color: Color(0xFF2D6B4F),
                 offset: Offset(6, 6),
                 blurRadius: 0,
               ),
@@ -135,18 +136,25 @@ class GameController extends GetxController {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              SvgPicture.asset(
+                'assets/icons/well-done.svg',
+                width: 64,
+                height: 64,
+                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              ),
+              const SizedBox(height: 16),
               Text(
                 title,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 message,
-                style: const TextStyle(fontSize: 16, color: Colors.black),
+                style: const TextStyle(fontSize: 16, color: Colors.white),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -164,12 +172,12 @@ class GameController extends GetxController {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: const Color(0xFF5FB592),
+                      color: const Color(0xFF2D6B4F),
                       width: 2,
                     ),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0xFF5FB592),
+                        color: Color(0xFF2D6B4F),
                         offset: Offset(4, 4),
                         blurRadius: 0,
                       ),
@@ -195,12 +203,12 @@ class GameController extends GetxController {
   void _showNoMarblesDialog() {
     // Random messages for when no marbles are placed
     final List<String> noMarblesTitles = [
-      '😊 Oops!',
-      '😊 Hey there!',
-      '😊 Let\'s try!',
-      '😊 Almost!',
-      '😊 Ready?',
-      '😊 Time to play!',
+      'Oops!',
+      'Hey there!',
+      'Let\'s try!',
+      'Almost!',
+      'Ready?',
+      'Time to play!',
     ];
 
     final List<String> noMarblesMessages = [
@@ -220,16 +228,16 @@ class GameController extends GetxController {
       Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFFB53939), width: 3),
+          side: const BorderSide(color: Color(0xFF6B2424), width: 3),
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFE48383),
+            color: const Color(0xFF8A3333),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFB53939), width: 3),
+            border: Border.all(color: const Color(0xFF6B2424), width: 3),
             boxShadow: const [
               BoxShadow(
-                color: Color(0xFFB53939),
+                color: Color(0xFF6B2424),
                 offset: Offset(6, 6),
                 blurRadius: 0,
               ),
@@ -239,18 +247,25 @@ class GameController extends GetxController {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              SvgPicture.asset(
+                'assets/icons/play.svg',
+                width: 64,
+                height: 64,
+                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              ),
+              const SizedBox(height: 16),
               Text(
                 title,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 message,
-                style: const TextStyle(fontSize: 16, color: Colors.black),
+                style: const TextStyle(fontSize: 16, color: Colors.white),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -267,12 +282,12 @@ class GameController extends GetxController {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: const Color(0xFFB53939),
+                      color: const Color(0xFF6B2424),
                       width: 2,
                     ),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0xFFB53939),
+                        color: Color(0xFF6B2424),
                         offset: Offset(4, 4),
                         blurRadius: 0,
                       ),
@@ -298,14 +313,14 @@ class GameController extends GetxController {
   void _showIncorrectCountDialog(int expectedCount) {
     // Random messages for incorrect marble counts
     final List<String> incorrectTitles = [
-      '😊 Not quite!',
-      '😊 Almost there!',
-      '😊 Keep trying!',
-      '😊 Nice try!',
-      '😊 You\'re close!',
-      '😊 Let\'s fix it!',
-      '😊 Good effort!',
-      '😊 Try again!',
+      'Not quite!',
+      'Almost there!',
+      'Keep trying!',
+      'Nice try!',
+      'You\'re close!',
+      'Let\'s fix it!',
+      'Good effort!',
+      'Try again!',
     ];
 
     final List<String> incorrectMessages = [
@@ -327,16 +342,16 @@ class GameController extends GetxController {
       Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFFB53939), width: 3),
+          side: const BorderSide(color: Color(0xFF6B2424), width: 3),
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFE48383),
+            color: const Color(0xFF8A3333),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFB53939), width: 3),
+            border: Border.all(color: const Color(0xFF6B2424), width: 3),
             boxShadow: const [
               BoxShadow(
-                color: Color(0xFFB53939),
+                color: Color(0xFF6B2424),
                 offset: Offset(6, 6),
                 blurRadius: 0,
               ),
@@ -346,18 +361,25 @@ class GameController extends GetxController {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              SvgPicture.asset(
+                'assets/icons/not-yet.svg',
+                width: 64,
+                height: 64,
+                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              ),
+              const SizedBox(height: 16),
               Text(
                 title,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 message,
-                style: const TextStyle(fontSize: 16, color: Colors.black),
+                style: const TextStyle(fontSize: 16, color: Colors.white),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -375,12 +397,12 @@ class GameController extends GetxController {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: const Color(0xFFB53939),
+                      color: const Color(0xFF6B2424),
                       width: 2,
                     ),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0xFFB53939),
+                        color: Color(0xFF6B2424),
                         offset: Offset(4, 4),
                         blurRadius: 0,
                       ),

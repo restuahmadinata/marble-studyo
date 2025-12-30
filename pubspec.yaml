@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   flame: ^1.34.0
   get: 
+  flutter_svg: ^2.0.10+1 
 
 dev_dependencies:
   flutter_test:
@@ -19,3 +20,33 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  
+  assets:
+    - assets/icons/
+  
+  fonts:
+    - family: SFProDisplay
+      fonts:
+        - asset: assets/fonts/SFProDisplay-Regular.otf
+        - asset: assets/fonts/SFProDisplay-Bold.otf
+          weight: 700
+        - asset: assets/fonts/SFProDisplay-Medium.otf
+          weight: 500
+        - asset: assets/fonts/SFProDisplay-BlackItalic.otf
+          weight: 900
+          style: italic
+        - asset: assets/fonts/SFProDisplay-HeavyItalic.otf
+          weight: 800
+          style: italic
+        - asset: assets/fonts/SFProDisplay-SemiboldItalic.otf
+          weight: 600
+          style: italic
+        - asset: assets/fonts/SFProDisplay-LightItalic.otf
+          weight: 300
+          style: italic
+        - asset: assets/fonts/SFProDisplay-ThinItalic.otf
+          weight: 100
+          style: italic
+        - asset: assets/fonts/SFProDisplay-UltralightItalic.otf
+          weight: 200
+          style: italic
