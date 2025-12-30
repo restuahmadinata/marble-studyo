@@ -5,16 +5,36 @@ import 'package:flutter/material.dart';
 import 'components/marble.dart';
 import 'components/line_layer.dart';
 import 'components/marble_card.dart';
+import 'components/hint_text.dart';
 
 class MarbleGame extends FlameGame {
   late LineLayer _lineLayer;
   final int marbleCount;
+  final int divider;
 
   List<Set<Marble>> groups = [];
   late double topBoundary;
   late double bottomBoundary;
 
-  MarbleGame({this.marbleCount = 10});
+  // Available colors from cards
+  final List<Color> availableColors = [
+    const Color(0xFFE5A882),
+    const Color(0xFFDEE385),
+    const Color(0xFF7BDDE6),
+  ];
+
+  // Track which colors are already used
+  final Set<Color> usedColors = {};
+
+  // Track which groups are stuck to cards
+  final Map<Set<Marble>, NeoCard> stuckGroups = {};
+
+  // Track last hint time for each group to prevent spam
+  final Map<Set<Marble>, double> lastHintTime = {};
+  double _gameTime = 0.0;
+  static const double hintCooldown = 2.0; // 2 seconds between hints
+
+  MarbleGame({this.marbleCount = 10, this.divider = 3});
 
   @override
   FutureOr<void> onLoad() async {
@@ -82,6 +102,19 @@ class MarbleGame extends FlameGame {
       }
     }
 
+    // Special case: If division result is 1 (e.g., 3÷3=1), color marbles directly
+    int expectedGroupSize = marbleCount ~/ divider;
+    if (expectedGroupSize == 1) {
+      int colorIndex = 0;
+      for (var marble in children.whereType<Marble>()) {
+        if (colorIndex < availableColors.length) {
+          marble.groupColor = availableColors[colorIndex];
+          usedColors.add(availableColors[colorIndex]);
+          colorIndex++;
+        }
+      }
+    }
+
     // Only add line layer if not already added
     if (!children.whereType<LineLayer>().isNotEmpty) {
       _lineLayer = LineLayer();
@@ -135,8 +168,17 @@ class MarbleGame extends FlameGame {
       marble.removeFromParent();
     });
 
-    // Clear groups
+    // Clear groups and tracking
     groups.clear();
+    usedColors.clear();
+    stuckGroups.clear();
+    lastHintTime.clear();
+    _gameTime = 0.0;
+
+    // Reset cards
+    for (var card in children.whereType<NeoCard>()) {
+      card.isCorrect = false;
+    }
 
     // Reinitialize game with new marble count
     _initializeGame();
@@ -149,8 +191,208 @@ class MarbleGame extends FlameGame {
     return groups.firstWhere((g) => g.contains(m), orElse: () => {m});
   }
 
+  // Check if a group has the correct number of marbles
+  bool isGroupCountCorrect(Set<Marble> group) {
+    int expectedCount = marbleCount ~/ divider;
+    return group.length == expectedCount;
+  }
+
+  // Get the next available color that hasn't been used (random selection)
+  Color? getNextAvailableColor() {
+    List<Color> availableUnused = availableColors
+        .where((color) => !usedColors.contains(color))
+        .toList();
+
+    if (availableUnused.isEmpty) {
+      return null; // All colors used
+    }
+
+    // Return a random color from available unused colors
+    return availableUnused[Random().nextInt(availableUnused.length)];
+  }
+
+  // Assign color to a group when count is correct
+  void assignColorToGroup(Set<Marble> group) {
+    if (isGroupCountCorrect(group) && !group.first.isBeingDragged) {
+      // Check if group already has a color assigned
+      bool hasDefaultColor = group.first.groupColor == Colors.purple;
+
+      if (hasDefaultColor) {
+        Color? newColor = getNextAvailableColor();
+        if (newColor != null) {
+          usedColors.add(newColor);
+          for (var marble in group) {
+            marble.groupColor = newColor;
+          }
+        }
+      }
+    }
+  }
+
+  void _showHint(Set<Marble> group, int expectedCount) {
+    // Calculate center of the group
+    Vector2 center = Vector2.zero();
+    for (var marble in group) {
+      center += marble.position;
+    }
+    center /= group.length.toDouble();
+
+    // Show hint text
+    String message = 'Need ${expectedCount} marbles!';
+    add(HintText(message: message, position: center));
+  }
+
+  // Check collision between marble group and cards
+  void checkGroupCardCollision(Set<Marble> group) {
+    if (stuckGroups.containsKey(group)) return; // Already stuck
+
+    // Special case: For division by same number (e.g., 3÷3), allow single marbles
+    int expectedCount = marbleCount ~/ divider;
+    bool isSingleMarbleCase = expectedCount == 1;
+
+    if (!isSingleMarbleCase && group.length <= 1) return;
+    if (!isSingleMarbleCase && !group.first.isConnected) return;
+
+    final cards = children.whereType<NeoCard>().toList();
+    Color groupColor = group.first.groupColor;
+
+    for (final card in cards) {
+      // Check if this is the correct matching card
+      if (isGroupCountCorrect(group) &&
+          groupColor != Colors.purple &&
+          card.baseColor == groupColor &&
+          !card.isCorrect) {
+        // Check if any marble in the group is colliding with the card
+        bool isColliding = false;
+        for (var marble in group) {
+          final double r = marble.radius;
+          final double x0 = card.position.x;
+          final double y0 = card.position.y;
+          final double x1 = x0 + card.size.x;
+          final double y1 = y0 + card.size.y;
+
+          // Check distance to card edges
+          final double cx = marble.position.x.clamp(x0, x1);
+          final double cy = marble.position.y.clamp(y0, y1);
+          final Vector2 closest = Vector2(cx, cy);
+          final double dist = (marble.position - closest).length;
+
+          if (dist <= r + 2) {
+            // Touching or very close
+            isColliding = true;
+            break;
+          }
+        }
+
+        if (isColliding) {
+          // Stick the group to the card
+          stuckGroups[group] = card;
+          card.isCorrect = true;
+          _positionGroupOnCard(group, card);
+          for (var marble in group) {
+            marble.isConnected = true;
+            marble.isStuckToCard = true; // Freeze physics
+          }
+          break;
+        }
+      }
+      // Show hint if wrong count and colliding with any card
+      else if (!isGroupCountCorrect(group) && groupColor != Colors.purple) {
+        // Check collision with this card
+        bool isColliding = false;
+        for (var marble in group) {
+          final double r = marble.radius;
+          final double x0 = card.position.x;
+          final double y0 = card.position.y;
+          final double x1 = x0 + card.size.x;
+          final double y1 = y0 + card.size.y;
+
+          final double cx = marble.position.x.clamp(x0, x1);
+          final double cy = marble.position.y.clamp(y0, y1);
+          final Vector2 closest = Vector2(cx, cy);
+          final double dist = (marble.position - closest).length;
+
+          if (dist <= r + 2) {
+            isColliding = true;
+            break;
+          }
+        }
+
+        if (isColliding && !group.first.isBeingDragged) {
+          double lastTime = lastHintTime[group] ?? 0.0;
+          if (_gameTime - lastTime >= hintCooldown) {
+            int expectedCount = marbleCount ~/ divider;
+            _showHint(group, expectedCount);
+            lastHintTime[group] = _gameTime;
+          }
+        }
+      }
+    }
+  }
+
+  void _positionGroupOnCard(Set<Marble> group, NeoCard card) {
+    List<Marble> marbles = group.toList();
+    int count = marbles.length;
+
+    // Position marbles touching the right edge of the card (no gap)
+    double rightEdgeX = card.position.x + card.size.x;
+    double cardCenterY = card.position.y + card.size.y / 2;
+    double marbleRadius = marbles.first.radius;
+    double spacing = marbleRadius * 2.0; // Tight spacing like marble-to-marble
+
+    if (count <= 4) {
+      // Small groups: arrange in 2x2 or less
+      int cols = 2;
+      int rows = (count + 1) ~/ 2;
+
+      for (int i = 0; i < count; i++) {
+        int row = i ~/ cols;
+        int col = i % cols;
+        // Position marbles touching the card edge (rightEdgeX + radius)
+        double offsetX = marbleRadius + col * spacing;
+        double offsetY = (row - (rows - 1) / 2) * spacing;
+
+        marbles[i].position = Vector2(
+          rightEdgeX + offsetX,
+          cardCenterY + offsetY,
+        );
+        marbles[i].targetPosition = marbles[i].position.clone();
+        marbles[i].originalFormPosition = marbles[i].position.clone();
+      }
+    } else {
+      // Larger groups: arrange in grid
+      int cols = (sqrt(count).ceil()).clamp(2, 4);
+      int rows = (count / cols).ceil();
+
+      for (int i = 0; i < count; i++) {
+        int row = i ~/ cols;
+        int col = i % cols;
+        // Position marbles touching the card edge (rightEdgeX + radius)
+        double offsetX = marbleRadius + col * spacing;
+        double offsetY = (row - (rows - 1) / 2) * spacing;
+
+        marbles[i].position = Vector2(
+          rightEdgeX + offsetX,
+          cardCenterY + offsetY,
+        );
+        marbles[i].targetPosition = marbles[i].position.clone();
+        marbles[i].originalFormPosition = marbles[i].position.clone();
+      }
+    }
+  }
+
   void moveGroup(Marble leader, Vector2 delta) {
     Set<Marble> group = findGroup(leader);
+
+    // Don't move if stuck to a card
+    if (stuckGroups.containsKey(group)) {
+      return;
+    }
+
+    // Calculate group size dampening for large groups
+    int groupSize = group.length;
+    bool isLargeGroup = groupSize > 6;
+
     for (var m in group) {
       // LOGIKA DRAG GROUP
       if (m == leader) {
@@ -159,8 +401,12 @@ class MarbleGame extends FlameGame {
         m.targetPosition += delta;
       } else {
         // Follower HANYA update targetnya.
-        // Posisi aslinya akan mengejar target ini pelan-pelan (Inersia dari marble.dart)
+        // For large groups, also move position slightly to reduce lag
         m.targetPosition += delta;
+        if (isLargeGroup) {
+          // Move position 50% instantly to reduce spinning
+          m.position += delta * 0.5;
+        }
       }
 
       // Penting: Update rumah formasi
@@ -169,6 +415,9 @@ class MarbleGame extends FlameGame {
 
     // Apply collision resolution immediately after moving
     _resolveMarbleCardCollisions();
+
+    // Check if group should get a color assignment
+    assignColorToGroup(group);
   }
 
   void setGroupPriority(Marble leader, int priority) {
@@ -182,6 +431,22 @@ class MarbleGame extends FlameGame {
     Set<Marble> oldGroup = findGroup(target);
 
     if (oldGroup.length > 1) {
+      // If group was stuck, unstick it
+      if (stuckGroups.containsKey(oldGroup)) {
+        NeoCard card = stuckGroups[oldGroup]!;
+        card.isCorrect = false;
+        stuckGroups.remove(oldGroup);
+      }
+
+      // Reset color if it was assigned
+      Color oldColor = oldGroup.first.groupColor;
+      if (oldColor != Colors.purple) {
+        usedColors.remove(oldColor);
+      }
+
+      // Clean up hint tracking
+      lastHintTime.remove(oldGroup);
+
       groups.remove(oldGroup);
 
       Vector2 center = Vector2.zero();
@@ -191,6 +456,8 @@ class MarbleGame extends FlameGame {
       for (var m in oldGroup) {
         groups.add({m});
         m.isConnected = false;
+        m.isStuckToCard = false; // Unfreeze physics
+        m.groupColor = Colors.purple; // Reset to default color
 
         Vector2 direction = m.position - center;
         if (direction.length == 0) direction = Vector2(1, 0);
@@ -204,6 +471,9 @@ class MarbleGame extends FlameGame {
   @override
   void update(double dt) {
     super.update(dt);
+
+    // Track game time for hint cooldown
+    _gameTime += dt;
 
     final allMarbles = children.whereType<Marble>().toList();
 
@@ -225,13 +495,29 @@ class MarbleGame extends FlameGame {
           double overlap = collisionDistance - dist;
           Vector2 pushVector = dir * (overlap / 2);
 
-          if (!mA.isBeingDragged) {
-            mA.position += pushVector;
-            mA.targetPosition += pushVector;
+          // Don't push stuck marbles (they're like rocks)
+          bool isAStuck = mA.isStuckToCard;
+          bool isBStuck = mB.isStuckToCard;
+
+          if (!mA.isBeingDragged && !isAStuck) {
+            // If B is stuck, push A with full force
+            if (isBStuck) {
+              mA.position += pushVector * 2;
+              mA.targetPosition += pushVector * 2;
+            } else {
+              mA.position += pushVector;
+              mA.targetPosition += pushVector;
+            }
           }
-          if (!mB.isBeingDragged) {
-            mB.position -= pushVector;
-            mB.targetPosition -= pushVector;
+          if (!mB.isBeingDragged && !isBStuck) {
+            // If A is stuck, push B with full force
+            if (isAStuck) {
+              mB.position -= pushVector * 2;
+              mB.targetPosition -= pushVector * 2;
+            } else {
+              mB.position -= pushVector;
+              mB.targetPosition -= pushVector;
+            }
           }
         }
 
@@ -244,10 +530,24 @@ class MarbleGame extends FlameGame {
           // Jika mereka SATU GRUP dan jaraknya agak renggang (akibat drag inersia)
           // Tarik mereka kembali mendekat (Snap Effect)
           if (groupA == groupB) {
+            // Skip cohesion for stuck groups (they're immovable)
+            if (stuckGroups.containsKey(groupA)) continue;
+
             // Hitung vektor tarik
             Vector2 pullDir = (mB.position - mA.position)..normalize();
-            // Kekuatan tarik (Adjustable) - Cukup kuat untuk snap back
-            double pullStrength = 50.0 * dt;
+
+            // Reduce pull strength for larger groups to prevent spinning
+            int groupSize = groupA.length;
+            double dampening = 1.0;
+            if (groupSize > 6) {
+              dampening = 0.3; // Much weaker for large groups
+            } else if (groupSize > 4) {
+              dampening = 0.5; // Moderate dampening
+            } else if (groupSize > 2) {
+              dampening = 0.7; // Light dampening
+            }
+
+            double pullStrength = 50.0 * dt * dampening;
 
             // Jangan tarik kalau sedang didrag user (biar user bisa bikin gap)
             if (!mA.isBeingDragged) {
@@ -269,6 +569,12 @@ class MarbleGame extends FlameGame {
             Set<Marble> groupB = findGroup(mB);
 
             if (groupA != groupB) {
+              // Don't allow connections with stuck groups
+              if (stuckGroups.containsKey(groupA) ||
+                  stuckGroups.containsKey(groupB)) {
+                continue;
+              }
+
               if (isDraggingA && groupA.length > 1) continue;
               if (isDraggingB && groupB.length > 1) continue;
 
@@ -278,6 +584,9 @@ class MarbleGame extends FlameGame {
                 m.isConnected = true;
                 m.priority = mA.priority;
               }
+
+              // Check if the new merged group should get a color
+              assignColorToGroup(groupA);
             }
           }
         }
@@ -298,6 +607,21 @@ class MarbleGame extends FlameGame {
 
     // Handle collisions of marbles with neo cards (rectangles)
     _resolveMarbleCardCollisions();
+
+    // Check for group-card collisions (for sticking)
+    int expectedCount = marbleCount ~/ divider;
+    bool isSingleMarbleCase = expectedCount == 1;
+
+    for (var group in groups) {
+      // Allow single marbles for 1:1 division, otherwise require connected groups
+      bool shouldCheck = isSingleMarbleCase
+          ? group.first.groupColor != Colors.purple
+          : (group.length > 1 && group.first.isConnected);
+
+      if (shouldCheck) {
+        checkGroupCardCollision(group);
+      }
+    }
   }
 
   void _resolveMarbleCardCollisions() {
@@ -305,6 +629,10 @@ class MarbleGame extends FlameGame {
     final cards = children.whereType<NeoCard>().toList();
 
     for (final m in marbles) {
+      // Skip collision resolution for marbles in stuck groups
+      Set<Marble> marbleGroup = findGroup(m);
+      if (stuckGroups.containsKey(marbleGroup)) continue;
+
       for (final card in cards) {
         final double r = m.radius;
         // Rect bounds in game space (card anchored at top-left)

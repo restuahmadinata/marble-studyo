@@ -21,13 +21,19 @@ class _GameScreenState extends State<GameScreen> {
   void initState() {
     super.initState();
     controller = Get.put(GameController());
-    game = MarbleGame(marbleCount: controller.marbleCount);
+    game = MarbleGame(
+      marbleCount: controller.marbleCount,
+      divider: controller.divider.value,
+    );
 
     // Listen to reset changes
     ever(controller.shouldResetGame, (shouldReset) {
       if (shouldReset) {
         setState(() {
-          game = MarbleGame(marbleCount: controller.marbleCount);
+          game = MarbleGame(
+            marbleCount: controller.marbleCount,
+            divider: controller.divider.value,
+          );
         });
       }
     });

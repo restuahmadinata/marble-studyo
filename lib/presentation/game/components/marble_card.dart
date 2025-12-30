@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 class NeoCard extends PositionComponent {
   final Color baseColor;
   final double shadowOffset;
+  bool isCorrect = false;
 
   late final Paint _fillPaint;
   late final Paint _borderPaint;
   late final Paint _shadowPaint;
+  late final Paint _iconPaint;
 
   NeoCard({
     required this.baseColor,
@@ -27,6 +29,11 @@ class NeoCard extends PositionComponent {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
     _shadowPaint = Paint()..color = darker;
+    _iconPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round;
   }
 
   @override
@@ -49,6 +56,20 @@ class NeoCard extends PositionComponent {
     );
     canvas.drawRRect(body, _fillPaint);
     canvas.drawRRect(body, _borderPaint);
+
+    // Draw checkmark if correct
+    if (isCorrect) {
+      final double centerX = size.x / 2;
+      final double centerY = size.y / 2;
+      final double checkSize = size.x * 0.3;
+
+      final Path checkPath = Path()
+        ..moveTo(centerX - checkSize, centerY)
+        ..lineTo(centerX - checkSize / 3, centerY + checkSize / 2)
+        ..lineTo(centerX + checkSize, centerY - checkSize / 2);
+
+      canvas.drawPath(checkPath, _iconPaint);
+    }
   }
 
   static Color _darken(Color color, double amount) {

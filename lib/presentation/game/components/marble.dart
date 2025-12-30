@@ -8,6 +8,7 @@ class Marble extends PositionComponent
     with HasGameReference<MarbleGame>, DragCallbacks, TapCallbacks {
   final double radius;
   final Paint _paint;
+  final Paint _borderPaint;
   final Paint _centerDotPaint;
 
   late Vector2 targetPosition;
@@ -22,9 +23,16 @@ class Marble extends PositionComponent
   bool isBeingDragged = false;
   bool isConnected = false;
   bool isChargingExplosion = false;
+  bool isStuckToCard = false; // New flag for stuck marbles
+  Color groupColor = Colors.purple; // Default color
 
   Marble({required double startX, required double startY, this.radius = 15.0})
     : _paint = Paint()..color = Colors.purple,
+      _borderPaint = Paint()
+        ..color =
+            const Color(0xFF6A1B9A) // Darker purple
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5,
       _centerDotPaint = Paint()..color = Colors.white.withValues(alpha: 0.5),
       super(
         position: Vector2(startX, startY),
@@ -42,24 +50,47 @@ class Marble extends PositionComponent
 
   @override
   void render(Canvas canvas) {
+    Color currentColor;
     if (isBeingDragged) {
-      _paint.color = Colors.purpleAccent;
+      currentColor = groupColor.withValues(alpha: 0.7);
     } else if (isChargingExplosion) {
-      _paint.color = Colors.redAccent;
+      currentColor = Colors.redAccent;
     } else {
-      _paint.color = Colors.purple;
+      currentColor = groupColor;
     }
 
+    _paint.color = currentColor;
+
+    // Update border color to be darker than the base color
+    _borderPaint.color = _darkenColor(currentColor, 0.12);
+
+    // Draw the marble body
     canvas.drawCircle(Offset(size.x / 2, size.y / 2), radius, _paint);
+
+    // Draw the border
+    canvas.drawCircle(Offset(size.x / 2, size.y / 2), radius, _borderPaint);
 
     if (isConnected) {
       canvas.drawCircle(Offset(size.x / 2, size.y / 2), 4, _centerDotPaint);
     }
   }
 
+  Color _darkenColor(Color color, double amount) {
+    final hsl = HSLColor.fromColor(color);
+    final darkened = hsl.withLightness(
+      (hsl.lightness - amount).clamp(0.0, 1.0),
+    );
+    return darkened.toColor();
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
+
+    // Skip all physics if stuck to a card
+    if (isStuckToCard) {
+      return;
+    }
 
     // Physics Inersia
     if (position.distanceTo(targetPosition) > 0.5) {
