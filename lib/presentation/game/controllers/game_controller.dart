@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../marble_game.dart';
 import '../components/marble_card.dart';
+import '../../../utils/responsive_utils.dart';
 
 class GameController extends GetxController {
   // Observable state
@@ -13,6 +14,7 @@ class GameController extends GetxController {
 
   // Reference to the game instance
   MarbleGame? gameInstance;
+  bool isGameInitialized = false;
 
   @override
   void onInit() {
@@ -114,88 +116,90 @@ class GameController extends GetxController {
     final message = successMessages[random.nextInt(successMessages.length)];
 
     Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFF2D6B4F), width: 3),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF3A8A68),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF2D6B4F), width: 3),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0xFF2D6B4F),
-                offset: Offset(6, 6),
-                blurRadius: 0,
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(
-                'assets/icons/well-done.svg',
-                width: 64,
-                height: 64,
-                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                style: const TextStyle(fontSize: 16, color: Colors.white),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: () {
-                  Get.back();
-                  resetGame();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
+      Builder(
+        builder: (context) {
+          final responsive = context.responsive;
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(responsive.scaleRadius(12)),
+              side: BorderSide(color: const Color(0xFF2D6B4F), width: responsive.scale(3)),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF3A8A68),
+                borderRadius: BorderRadius.circular(responsive.scaleRadius(12)),
+                border: Border.all(color: const Color(0xFF2D6B4F), width: responsive.scale(3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2D6B4F),
+                    offset: Offset(responsive.scale(6), responsive.scale(6)),
+                    blurRadius: 0,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color(0xFF2D6B4F),
-                      width: 2,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0xFF2D6B4F),
-                        offset: Offset(4, 4),
-                        blurRadius: 0,
-                      ),
-                    ],
+                ],
+              ),
+              padding: responsive.scalePadding(const EdgeInsets.all(24)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/well-done.svg',
+                    width: responsive.scale(64),
+                    height: responsive.scale(64),
+                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                   ),
-                  child: const Text(
-                    'Play Again!',
+                  SizedBox(height: responsive.scale(16)),
+                  Text(
+                    title,
                     style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
+                      fontSize: responsive.scaleFontSize(24),
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                ),
+                  SizedBox(height: responsive.scale(16)),
+                  Text(
+                    message,
+                    style: TextStyle(fontSize: responsive.scaleFontSize(16), color: Colors.white),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: responsive.scale(24)),
+                  GestureDetector(
+                    onTap: () {
+                      Get.back();
+                      resetGame();
+                    },
+                    child: Container(
+                      padding: responsive.scaleSymmetricPadding(32, 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(responsive.scaleRadius(8)),
+                        border: Border.all(
+                          color: const Color(0xFF2D6B4F),
+                          width: responsive.scale(2),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2D6B4F),
+                            offset: Offset(responsive.scale(4), responsive.scale(4)),
+                            blurRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'Play Again!',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: responsive.scaleFontSize(16),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -225,87 +229,89 @@ class GameController extends GetxController {
     final message = noMarblesMessages[random.nextInt(noMarblesMessages.length)];
 
     Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFF6B2424), width: 3),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF8A3333),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF6B2424), width: 3),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0xFF6B2424),
-                offset: Offset(6, 6),
-                blurRadius: 0,
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(
-                'assets/icons/play.svg',
-                width: 64,
-                height: 64,
-                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                style: const TextStyle(fontSize: 16, color: Colors.white),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: () {
-                  Get.back();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
+      Builder(
+        builder: (context) {
+          final responsive = context.responsive;
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(responsive.scaleRadius(12)),
+              side: BorderSide(color: const Color(0xFF6B2424), width: responsive.scale(3)),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF8A3333),
+                borderRadius: BorderRadius.circular(responsive.scaleRadius(12)),
+                border: Border.all(color: const Color(0xFF6B2424), width: responsive.scale(3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6B2424),
+                    offset: Offset(responsive.scale(6), responsive.scale(6)),
+                    blurRadius: 0,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color(0xFF6B2424),
-                      width: 2,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0xFF6B2424),
-                        offset: Offset(4, 4),
-                        blurRadius: 0,
-                      ),
-                    ],
+                ],
+              ),
+              padding: responsive.scalePadding(const EdgeInsets.all(24)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/play.svg',
+                    width: responsive.scale(64),
+                    height: responsive.scale(64),
+                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                   ),
-                  child: const Text(
-                    'OK',
+                  SizedBox(height: responsive.scale(16)),
+                  Text(
+                    title,
                     style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
+                      fontSize: responsive.scaleFontSize(24),
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                ),
+                  SizedBox(height: responsive.scale(16)),
+                  Text(
+                    message,
+                    style: TextStyle(fontSize: responsive.scaleFontSize(16), color: Colors.white),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: responsive.scale(24)),
+                  GestureDetector(
+                    onTap: () {
+                      Get.back();
+                    },
+                    child: Container(
+                      padding: responsive.scaleSymmetricPadding(32, 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(responsive.scaleRadius(8)),
+                        border: Border.all(
+                          color: const Color(0xFF6B2424),
+                          width: responsive.scale(2),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6B2424),
+                            offset: Offset(responsive.scale(4), responsive.scale(4)),
+                            blurRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'OK',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: responsive.scaleFontSize(16),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -339,88 +345,90 @@ class GameController extends GetxController {
     final message = incorrectMessages[random.nextInt(incorrectMessages.length)];
 
     Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFF6B2424), width: 3),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF8A3333),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF6B2424), width: 3),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0xFF6B2424),
-                offset: Offset(6, 6),
-                blurRadius: 0,
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(
-                'assets/icons/not-yet.svg',
-                width: 64,
-                height: 64,
-                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                style: const TextStyle(fontSize: 16, color: Colors.white),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: () {
-                  Get.back();
-                  _pulseIncorrectCards(expectedCount);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
+      Builder(
+        builder: (context) {
+          final responsive = context.responsive;
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(responsive.scaleRadius(12)),
+              side: BorderSide(color: const Color(0xFF6B2424), width: responsive.scale(3)),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF8A3333),
+                borderRadius: BorderRadius.circular(responsive.scaleRadius(12)),
+                border: Border.all(color: const Color(0xFF6B2424), width: responsive.scale(3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6B2424),
+                    offset: Offset(responsive.scale(6), responsive.scale(6)),
+                    blurRadius: 0,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color(0xFF6B2424),
-                      width: 2,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0xFF6B2424),
-                        offset: Offset(4, 4),
-                        blurRadius: 0,
-                      ),
-                    ],
+                ],
+              ),
+              padding: responsive.scalePadding(const EdgeInsets.all(24)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/not-yet.svg',
+                    width: responsive.scale(64),
+                    height: responsive.scale(64),
+                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                   ),
-                  child: const Text(
-                    'OK',
+                  SizedBox(height: responsive.scale(16)),
+                  Text(
+                    title,
                     style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
+                      fontSize: responsive.scaleFontSize(24),
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                ),
+                  SizedBox(height: responsive.scale(16)),
+                  Text(
+                    message,
+                    style: TextStyle(fontSize: responsive.scaleFontSize(16), color: Colors.white),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: responsive.scale(24)),
+                  GestureDetector(
+                    onTap: () {
+                      Get.back();
+                      _pulseIncorrectCards(expectedCount);
+                    },
+                    child: Container(
+                      padding: responsive.scaleSymmetricPadding(32, 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(responsive.scaleRadius(8)),
+                        border: Border.all(
+                          color: const Color(0xFF6B2424),
+                          width: responsive.scale(2),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6B2424),
+                            offset: Offset(responsive.scale(4), responsive.scale(4)),
+                            blurRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'OK',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: responsive.scaleFontSize(16),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

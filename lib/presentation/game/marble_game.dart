@@ -10,6 +10,7 @@ class MarbleGame extends FlameGame {
   late LineLayer _lineLayer;
   final int marbleCount;
   final int divider;
+  final Size screenSize;
 
   List<Set<Marble>> groups = [];
   late double topBoundary;
@@ -28,7 +29,11 @@ class MarbleGame extends FlameGame {
   // Track which groups are stuck to cards
   final Map<Set<Marble>, NeoCard> stuckGroups = {};
 
-  MarbleGame({this.marbleCount = 10, this.divider = 3});
+  MarbleGame({
+    this.marbleCount = 10,
+    this.divider = 3,
+    required this.screenSize,
+  });
 
   @override
   FutureOr<void> onLoad() async {
@@ -40,25 +45,43 @@ class MarbleGame extends FlameGame {
   Future<void> _initializeGame() async {
     int totalMarbles = marbleCount;
 
-    // Calculate dynamic radius based on marble count
+    // Calculate scale factor with better handling for larger displays
+    double designWidth = 430.0;
+    double designHeight = 932.0;
+    double widthScale = size.x / designWidth;
+    double heightScale = size.y / designHeight;
+    
+    // Use minimum scale to ensure fit
+    double scaleFactor = min(widthScale, heightScale);
+    
+    // For larger displays (like 1080x1920), scale down more
+    if (size.x > 800) {
+      scaleFactor = scaleFactor * 0.65;
+    }
+    scaleFactor = scaleFactor.clamp(0.7, 1.2);
+
+    // Calculate dynamic radius based on marble count and screen size
     double dynamicRadius;
     if (totalMarbles <= 18) {
-      dynamicRadius = 15.0;
+      dynamicRadius = 15.0 * scaleFactor;
     } else if (totalMarbles <= 24) {
-      dynamicRadius = 12.0;
+      dynamicRadius = 12.0 * scaleFactor;
     } else {
-      dynamicRadius = 10.0;
+      dynamicRadius = 10.0 * scaleFactor;
     }
+
+    // Ensure minimum readable size
+    dynamicRadius = dynamicRadius.clamp(8.0, 20.0);
 
     // Adjust minimum spawn distance based on radius
     double minSpawnDistance = dynamicRadius * 2.5;
     Random rng = Random();
 
-    // Left boundary ends at card area (card width + small margin)
-    final double leftBoundary = 80.0;
-    final double rightMargin = 50.0;
-    final double topMargin = 150.0;
-    final double bottomMargin = 50.0;
+    // Scale boundaries proportionally with left margin for cards
+    final double leftBoundary = 105.0 * scaleFactor;
+    final double rightMargin = 50.0 * scaleFactor;
+    final double topMargin = 150.0 * scaleFactor;
+    final double bottomMargin = 50.0 * scaleFactor;
 
     for (int i = 0; i < totalMarbles; i++) {
       Vector2? candidatePosition;
@@ -109,11 +132,28 @@ class MarbleGame extends FlameGame {
       const Color c2 = Color(0xFFDEE385);
       const Color c3 = Color(0xFF7BDDE6);
 
-      final double cardWidth = 70;
-      final double cardHeight = 140;
-      final double leftMargin = 0;
-      final double topStart = 240;
-      final double gap = 22;
+      // Calculate scale factor with better handling for larger displays
+      double designWidth = 430.0;
+      double designHeight = 932.0;
+      double widthScale = size.x / designWidth;
+      double heightScale = size.y / designHeight;
+      
+      // Use minimum scale to ensure fit, but don't clamp too aggressively
+      double scaleFactor = min(widthScale, heightScale);
+      
+      // For larger displays (like 1080x1920), use a more balanced scaling
+      if (size.x > 800) {
+        // Scale down more aggressively for very large displays
+        scaleFactor = scaleFactor * 0.65;
+      }
+      scaleFactor = scaleFactor.clamp(0.7, 1.2);
+
+      // Card dimensions with increased sizing
+      final double cardWidth = 85 * scaleFactor;
+      final double cardHeight = 160 * scaleFactor;
+      final double leftMargin = 8 * scaleFactor;
+      final double topStart = 280 * scaleFactor;
+      final double gap = 28 * scaleFactor;
 
       // Set boundaries to match the card area
       topBoundary = topStart;

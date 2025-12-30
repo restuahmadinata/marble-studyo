@@ -5,6 +5,7 @@ import '../game/marble_game.dart';
 import '../game/controllers/game_controller.dart';
 import '../game/components/question_card.dart';
 import '../game/components/instruction_card.dart';
+import '../../utils/responsive_utils.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -21,30 +22,37 @@ class _GameScreenState extends State<GameScreen> {
   void initState() {
     super.initState();
     controller = Get.put(GameController());
-    game = MarbleGame(
+  }
+
+  MarbleGame _createGame(BuildContext context) {
+    return MarbleGame(
       marbleCount: controller.marbleCount,
       divider: controller.divider.value,
+      screenSize: MediaQuery.of(context).size,
     );
-    // Set game instance in controller
-    controller.gameInstance = game;
-
-    // Listen to reset changes
-    ever(controller.shouldResetGame, (shouldReset) {
-      if (shouldReset) {
-        setState(() {
-          game = MarbleGame(
-            marbleCount: controller.marbleCount,
-            divider: controller.divider.value,
-          );
-          // Update game instance in controller
-          controller.gameInstance = game;
-        });
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final responsive = context.responsive;
+    
+    // Initialize game on first build
+    if (!controller.isGameInitialized) {
+      game = _createGame(context);
+      controller.gameInstance = game;
+      controller.isGameInitialized = true;
+
+      // Listen to reset changes
+      ever(controller.shouldResetGame, (shouldReset) {
+        if (shouldReset) {
+          setState(() {
+            game = _createGame(context);
+            controller.gameInstance = game;
+          });
+        }
+      });
+    }
+    
     return Scaffold(
       backgroundColor: const Color(0xFFE1BEE7),
       body: SafeArea(
@@ -52,19 +60,19 @@ class _GameScreenState extends State<GameScreen> {
           children: [
             // Layer 1: Game Engine dengan Container Boundary
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 36.0,
-              ),
+              padding: responsive.scaleSymmetricPadding(16.0, 36.0),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.purple.shade300, width: 3.0),
-                  borderRadius: BorderRadius.circular(40),
+                  border: Border.all(
+                    color: Colors.purple.shade300,
+                    width: responsive.scale(3.0),
+                  ),
+                  borderRadius: BorderRadius.circular(responsive.scaleRadius(40)),
                   color: const Color(0xFFE1BEE7),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFFB34FB4),
-                      offset: const Offset(4, 4),
+                      offset: Offset(responsive.scale(4), responsive.scale(4)),
                       blurRadius: 0,
                       spreadRadius: 0,
                     ),
@@ -77,7 +85,7 @@ class _GameScreenState extends State<GameScreen> {
                       instruction: "Find the result of the division",
                     ),
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(17),
+                      borderRadius: BorderRadius.circular(responsive.scaleRadius(17)),
                       clipBehavior: Clip.none,
                       child: GameWidget(
                         key: ValueKey(controller.marbleCount),
@@ -91,36 +99,36 @@ class _GameScreenState extends State<GameScreen> {
             ),
             // Standalone Check Answer Button
             Positioned(
-              bottom: 20,
+              bottom: responsive.scale(20),
               left: 0,
               right: 0,
               child: Center(
                 child: GestureDetector(
                   onTap: () => controller.checkAnswer(),
                   child: Container(
-                    width: 300,
-                    height: 60,
+                    width: responsive.scaleWidth(300),
+                    height: responsive.scaleHeight(60),
                     decoration: BoxDecoration(
                       color: const Color(0xFF83E4B8),
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(responsive.scaleRadius(30)),
                       border: Border.all(
-                        color: const Color(0xFF5FB592), // Darker version
-                        width: 3,
+                        color: const Color(0xFF5FB592),
+                        width: responsive.scale(3),
                       ),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: Color(0xFF5FB592), // Darker version for shadow
-                          offset: Offset(6, 6),
+                          color: const Color(0xFF5FB592),
+                          offset: Offset(responsive.scale(6), responsive.scale(6)),
                           blurRadius: 0,
                         ),
                       ],
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'Check Answer',
                         style: TextStyle(
                           color: Colors.black,
-                          fontSize: 18,
+                          fontSize: responsive.scaleFontSize(18),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
