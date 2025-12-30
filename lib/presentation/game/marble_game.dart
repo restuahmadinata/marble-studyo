@@ -238,7 +238,9 @@ class MarbleGame extends FlameGame {
     center /= group.length.toDouble();
 
     // Show hint text
-    String message = 'Need ${expectedCount} marbles!';
+    String message = expectedCount == 1 
+        ? 'You need 1 marble!' 
+        : 'You need $expectedCount marbles!';
     add(HintText(message: message, position: center));
   }
 

@@ -25,6 +25,8 @@ class _GameScreenState extends State<GameScreen> {
       marbleCount: controller.marbleCount,
       divider: controller.divider.value,
     );
+    // Set game instance in controller
+    controller.gameInstance = game;
 
     // Listen to reset changes
     ever(controller.shouldResetGame, (shouldReset) {
@@ -34,6 +36,8 @@ class _GameScreenState extends State<GameScreen> {
             marbleCount: controller.marbleCount,
             divider: controller.divider.value,
           );
+          // Update game instance in controller
+          controller.gameInstance = game;
         });
       }
     });

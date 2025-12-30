@@ -5,6 +5,11 @@ class NeoCard extends PositionComponent {
   final Color baseColor;
   final double shadowOffset;
   bool isCorrect = false;
+  
+  // Glint sweep animation properties
+  bool shouldGlint = false;
+  double glintTimer = 0.0;
+  static const double glintDuration = 2.5; // 2.5 seconds
 
   late final Paint _fillPaint;
   late final Paint _borderPaint;
@@ -35,6 +40,23 @@ class NeoCard extends PositionComponent {
       ..strokeWidth = 3.0
       ..strokeCap = StrokeCap.round;
   }
+  
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (shouldGlint) {
+      glintTimer += dt;
+      if (glintTimer >= glintDuration) {
+        shouldGlint = false;
+        glintTimer = 0.0;
+      }
+    }
+  }
+  
+  void startGlint() {
+    shouldGlint = true;
+    glintTimer = 0.0;
+  }
 
   @override
   void render(Canvas canvas) {
@@ -54,8 +76,45 @@ class NeoCard extends PositionComponent {
       bodyRect,
       const Radius.circular(12),
     );
+    
     canvas.drawRRect(body, _fillPaint);
     canvas.drawRRect(body, _borderPaint);
+    
+    // Draw glint sweep if active
+    if (shouldGlint && glintTimer < glintDuration) {
+      canvas.save();
+      canvas.clipRRect(body);
+      
+      double progress = glintTimer / glintDuration;
+      
+      // Sweep from left to right across the card
+      double sweepWidth = size.x * 0.6; // Width of the glint
+      double sweepPosition = -sweepWidth + (size.x + sweepWidth * 2) * progress;
+      
+      // Create gradient for glint effect
+      final glintGradient = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          Colors.white.withOpacity(0.0),
+          Colors.white.withOpacity(0.8),
+          Colors.white.withOpacity(0.0),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      );
+      
+      final glintPaint = Paint()
+        ..shader = glintGradient.createShader(
+          Rect.fromLTWH(sweepPosition, 0, sweepWidth, size.y),
+        );
+      
+      canvas.drawRect(
+        Rect.fromLTWH(sweepPosition, 0, sweepWidth, size.y),
+        glintPaint,
+      );
+      
+      canvas.restore();
+    }
 
     // Draw checkmark if correct
     if (isCorrect) {
