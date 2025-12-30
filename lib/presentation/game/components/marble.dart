@@ -24,6 +24,7 @@ class Marble extends PositionComponent
   bool isConnected = false;
   bool isChargingExplosion = false;
   bool isStuckToCard = false; // New flag for stuck marbles
+  bool hasBeenDragged = false; // Track if marble has been dragged at least once
   Color groupColor = Colors.purple; // Default color
 
   Marble({required double startX, required double startY, this.radius = 15.0})
@@ -158,11 +159,22 @@ class Marble extends PositionComponent
     originalFormPosition += jump;
   }
 
+  void scatterReduced(Vector2 pushDirection) {
+    isChargingExplosion = false;
+    _chargingTimer = 0;
+    scale.setValues(1.0, 1.0);
+
+    Vector2 jump = pushDirection * 40; // Reduced distance (half of normal)
+    targetPosition += jump;
+    originalFormPosition += jump;
+  }
+
   @override
   void onDragStart(DragStartEvent event) {
     _resetExplosionState();
     super.onDragStart(event);
     isBeingDragged = true;
+    hasBeenDragged = true; // Mark as dragged
     scale.setValues(1.2, 1.2);
     game.setGroupPriority(this, 100);
   }

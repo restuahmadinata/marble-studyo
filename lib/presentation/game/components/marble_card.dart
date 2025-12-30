@@ -5,7 +5,7 @@ class NeoCard extends PositionComponent {
   final Color baseColor;
   final double shadowOffset;
   bool isCorrect = false;
-  
+
   // Glint sweep animation properties
   bool shouldGlint = false;
   double glintTimer = 0.0;
@@ -14,7 +14,6 @@ class NeoCard extends PositionComponent {
   late final Paint _fillPaint;
   late final Paint _borderPaint;
   late final Paint _shadowPaint;
-  late final Paint _iconPaint;
 
   NeoCard({
     required this.baseColor,
@@ -34,13 +33,8 @@ class NeoCard extends PositionComponent {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
     _shadowPaint = Paint()..color = darker;
-    _iconPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0
-      ..strokeCap = StrokeCap.round;
   }
-  
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -52,7 +46,7 @@ class NeoCard extends PositionComponent {
       }
     }
   }
-  
+
   void startGlint() {
     shouldGlint = true;
     glintTimer = 0.0;
@@ -76,21 +70,21 @@ class NeoCard extends PositionComponent {
       bodyRect,
       const Radius.circular(12),
     );
-    
+
     canvas.drawRRect(body, _fillPaint);
     canvas.drawRRect(body, _borderPaint);
-    
+
     // Draw glint sweep if active
     if (shouldGlint && glintTimer < glintDuration) {
       canvas.save();
       canvas.clipRRect(body);
-      
+
       double progress = glintTimer / glintDuration;
-      
+
       // Sweep from left to right across the card
       double sweepWidth = size.x * 0.6; // Width of the glint
       double sweepPosition = -sweepWidth + (size.x + sweepWidth * 2) * progress;
-      
+
       // Create gradient for glint effect
       final glintGradient = LinearGradient(
         begin: Alignment.centerLeft,
@@ -102,32 +96,18 @@ class NeoCard extends PositionComponent {
         ],
         stops: const [0.0, 0.5, 1.0],
       );
-      
+
       final glintPaint = Paint()
         ..shader = glintGradient.createShader(
           Rect.fromLTWH(sweepPosition, 0, sweepWidth, size.y),
         );
-      
+
       canvas.drawRect(
         Rect.fromLTWH(sweepPosition, 0, sweepWidth, size.y),
         glintPaint,
       );
-      
+
       canvas.restore();
-    }
-
-    // Draw checkmark if correct
-    if (isCorrect) {
-      final double centerX = size.x / 2;
-      final double centerY = size.y / 2;
-      final double checkSize = size.x * 0.3;
-
-      final Path checkPath = Path()
-        ..moveTo(centerX - checkSize, centerY)
-        ..lineTo(centerX - checkSize / 3, centerY + checkSize / 2)
-        ..lineTo(centerX + checkSize, centerY - checkSize / 2);
-
-      canvas.drawPath(checkPath, _iconPaint);
     }
   }
 

@@ -9,7 +9,7 @@ class GameController extends GetxController {
   var questionNumber = 24.obs;
   var divider = 3.obs;
   var shouldResetGame = false.obs;
-  
+
   // Reference to the game instance
   MarbleGame? gameInstance;
 
@@ -41,24 +41,77 @@ class GameController extends GetxController {
 
   void checkAnswer() {
     if (gameInstance == null) return;
-    
+
     // Get all cards from the game
     final cards = gameInstance!.children.whereType<NeoCard>().toList();
-    
-    // Check if all cards are filled (have checkmarks)
-    bool allCardsCorrect = cards.every((card) => card.isCorrect);
-    bool hasEmptyCards = cards.any((card) => !card.isCorrect);
-    
-    if (allCardsCorrect && cards.length == divider.value) {
-      // All cards are correctly filled - show success dialog
+
+    // Check if there are any stuck marbles
+    if (gameInstance!.stuckGroups.isEmpty) {
+      _showNoMarblesDialog();
+      return;
+    }
+
+    // Calculate expected count per card
+    int expectedCount = questionNumber.value ~/ divider.value;
+
+    // Check marble counts on each card
+    List<int> cardCounts = [];
+    for (final card in cards) {
+      int count = 0;
+      for (final groupEntry in gameInstance!.stuckGroups.entries) {
+        if (groupEntry.value == card) {
+          count = groupEntry.key.length;
+          break;
+        }
+      }
+      cardCounts.add(count);
+    }
+
+    // Check if all cards have correct count
+    bool allCardsHaveCorrectCount = cardCounts.every(
+      (count) => count == expectedCount,
+    );
+    bool allCardsHaveMarbles = cardCounts.every((count) => count > 0);
+
+    if (allCardsHaveCorrectCount &&
+        allCardsHaveMarbles &&
+        cards.length == divider.value) {
+      // All cards have correct count - show success dialog
       _showSuccessDialog();
-    } else if (hasEmptyCards) {
-      // Some cards are still empty - show error dialog
-      _showEmptyCardsDialog();
+    } else {
+      // Show incorrect count dialog
+      _showIncorrectCountDialog(expectedCount);
     }
   }
-  
+
   void _showSuccessDialog() {
+    // Random success messages for kids
+    final List<String> successTitles = [
+      '🎉 Awesome!',
+      '🎉 Fantastic!',
+      '🎉 Super!',
+      '🎉 Amazing!',
+      '🎉 Brilliant!',
+      '🎉 Wonderful!',
+      '🎉 Excellent!',
+      '🎉 Perfect!',
+    ];
+
+    final List<String> successMessages = [
+      'You did it! All the marbles are in the right spots!',
+      'Great job! Every marble found its perfect home!',
+      'You\'re a marble master! All spots are filled correctly!',
+      'Wow! You got all the marbles in the right places!',
+      'Super star! Every card has just the right number!',
+      'You\'re amazing! All marbles are perfectly placed!',
+      'Brilliant work! Every spot is filled just right!',
+      'Fantastic! You solved the marble puzzle perfectly!',
+    ];
+
+    final random = Random();
+    final title = successTitles[random.nextInt(successTitles.length)];
+    final message = successMessages[random.nextInt(successMessages.length)];
+
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(
@@ -82,18 +135,18 @@ class GameController extends GetxController {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '🎉 Awesome!',
-                style: TextStyle(
+              Text(
+                title,
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'You did it! All the marbles are in the right spots!',
-                style: TextStyle(fontSize: 16, color: Colors.black),
+              Text(
+                message,
+                style: const TextStyle(fontSize: 16, color: Colors.black),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -103,11 +156,17 @@ class GameController extends GetxController {
                   resetGame();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF5FB592), width: 2),
+                    border: Border.all(
+                      color: const Color(0xFF5FB592),
+                      width: 2,
+                    ),
                     boxShadow: const [
                       BoxShadow(
                         color: Color(0xFF5FB592),
@@ -132,8 +191,31 @@ class GameController extends GetxController {
       ),
     );
   }
-  
-  void _showEmptyCardsDialog() {
+
+  void _showNoMarblesDialog() {
+    // Random messages for when no marbles are placed
+    final List<String> noMarblesTitles = [
+      '😊 Oops!',
+      '😊 Hey there!',
+      '😊 Let\'s try!',
+      '😊 Almost!',
+      '😊 Ready?',
+      '😊 Time to play!',
+    ];
+
+    final List<String> noMarblesMessages = [
+      'You need to place some marbles on the cards first!',
+      'Let\'s put some marbles on the cards to get started!',
+      'Try dragging marbles onto the colorful cards!',
+      'Place your marbles on the cards to begin the game!',
+      'Drag the marbles to the cards to start playing!',
+      'Let\'s fill those cards with beautiful marbles!',
+    ];
+
+    final random = Random();
+    final title = noMarblesTitles[random.nextInt(noMarblesTitles.length)];
+    final message = noMarblesMessages[random.nextInt(noMarblesMessages.length)];
+
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(
@@ -157,32 +239,37 @@ class GameController extends GetxController {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '😊 Oops!',
-                style: TextStyle(
+              Text(
+                title,
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Some boxes are still empty! Can you fill them all?',
-                style: TextStyle(fontSize: 16, color: Colors.black),
+              Text(
+                message,
+                style: const TextStyle(fontSize: 16, color: Colors.black),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               GestureDetector(
                 onTap: () {
                   Get.back();
-                  _pulseEmptyCards();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFB53939), width: 2),
+                    border: Border.all(
+                      color: const Color(0xFFB53939),
+                      width: 2,
+                    ),
                     boxShadow: const [
                       BoxShadow(
                         color: Color(0xFFB53939),
@@ -207,13 +294,131 @@ class GameController extends GetxController {
       ),
     );
   }
-  
-  void _pulseEmptyCards() {
+
+  void _showIncorrectCountDialog(int expectedCount) {
+    // Random messages for incorrect marble counts
+    final List<String> incorrectTitles = [
+      '😊 Not quite!',
+      '😊 Almost there!',
+      '😊 Keep trying!',
+      '😊 Nice try!',
+      '😊 You\'re close!',
+      '😊 Let\'s fix it!',
+      '😊 Good effort!',
+      '😊 Try again!',
+    ];
+
+    final List<String> incorrectMessages = [
+      'Some cards have incorrect amount of marbles!',
+      'A few cards need different numbers of marbles!',
+      'Let\'s check which cards need more or fewer marbles!',
+      'Some cards don\'t have the right number of marbles yet!',
+      'Look at the cards - some need different marble counts!',
+      'Almost perfect! Some cards need marble adjustments!',
+      'Great try! Let\'s fix the marble numbers on some cards!',
+      'You\'re doing well! Some cards need marble count changes!',
+    ];
+
+    final random = Random();
+    final title = incorrectTitles[random.nextInt(incorrectTitles.length)];
+    final message = incorrectMessages[random.nextInt(incorrectMessages.length)];
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: Color(0xFFB53939), width: 3),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE48383),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFB53939), width: 3),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0xFFB53939),
+                offset: Offset(6, 6),
+                blurRadius: 0,
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                message,
+                style: const TextStyle(fontSize: 16, color: Colors.black),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () {
+                  Get.back();
+                  _pulseIncorrectCards(expectedCount);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFB53939),
+                      width: 2,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0xFFB53939),
+                        offset: Offset(4, 4),
+                        blurRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _pulseIncorrectCards(int expectedCount) {
     if (gameInstance == null) return;
-    
+
     final cards = gameInstance!.children.whereType<NeoCard>().toList();
     for (final card in cards) {
-      if (!card.isCorrect) {
+      // Count marbles on this card
+      int count = 0;
+      for (final groupEntry in gameInstance!.stuckGroups.entries) {
+        if (groupEntry.value == card) {
+          count = groupEntry.key.length;
+          break;
+        }
+      }
+
+      // Pulse if count is incorrect
+      if (count != expectedCount) {
         card.startGlint();
       }
     }
