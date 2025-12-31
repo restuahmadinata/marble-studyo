@@ -8,7 +8,7 @@ import 'components/marble_card.dart';
 
 class MarbleGame extends FlameGame {
   late LineLayer _lineLayer;
-  final int marbleCount;
+  int marbleCount; // Changed from final to allow updating on reset
   final int divider;
   final Size screenSize;
 
@@ -183,12 +183,109 @@ class MarbleGame extends FlameGame {
     }
   }
 
-  void resetGame() {
-    // Remove all marbles
+  /// Initialize game with sporadic spawn animations
+  Future<void> _initializeGameWithAnimation() async {
+    int totalMarbles = marbleCount;
+
+    // Calculate scale factor (same as _initializeGame)
+    double designWidth = 430.0;
+    double designHeight = 932.0;
+    double widthScale = size.x / designWidth;
+    double heightScale = size.y / designHeight;
+    
+    double scaleFactor = min(widthScale, heightScale);
+    
+    if (size.x > 800) {
+      scaleFactor = scaleFactor * 0.65;
+    }
+    scaleFactor = scaleFactor.clamp(0.7, 1.2);
+
+    // Calculate dynamic radius based on marble count and screen size
+    double dynamicRadius;
+    if (totalMarbles <= 18) {
+      dynamicRadius = 15.0 * scaleFactor;
+    } else if (totalMarbles <= 24) {
+      dynamicRadius = 12.0 * scaleFactor;
+    } else {
+      dynamicRadius = 10.0 * scaleFactor;
+    }
+
+    dynamicRadius = dynamicRadius.clamp(8.0, 20.0);
+    double minSpawnDistance = dynamicRadius * 2.5;
+    Random rng = Random();
+
+    // Scale boundaries proportionally with left margin for cards
+    final double leftBoundary = 105.0 * scaleFactor;
+    final double rightMargin = 50.0 * scaleFactor;
+    final double topMargin = 150.0 * scaleFactor;
+    final double bottomMargin = 50.0 * scaleFactor;
+
+    // Spawn marbles with random delays
+    for (int i = 0; i < totalMarbles; i++) {
+      Vector2? candidatePosition;
+      bool positionFound = false;
+      int attempts = 0;
+
+      while (!positionFound && attempts < 300) {
+        attempts++;
+        double posX =
+            leftBoundary +
+            rng.nextDouble() * (size.x - leftBoundary - rightMargin);
+        double posY =
+            topMargin + rng.nextDouble() * (size.y - topMargin - bottomMargin);
+        candidatePosition = Vector2(posX, posY);
+
+        bool isTooClose = false;
+        // Only check against living marbles (not dying ones)
+        for (var existing in children.whereType<Marble>()) {
+          if (!existing.isDying && 
+              existing.position.distanceTo(candidatePosition) < minSpawnDistance) {
+            isTooClose = true;
+            break;
+          }
+        }
+        if (!isTooClose) positionFound = true;
+      }
+
+      if (positionFound && candidatePosition != null) {
+        Marble m = Marble(
+          startX: candidatePosition.x,
+          startY: candidatePosition.y,
+          radius: dynamicRadius,
+        );
+        
+        // Set initial scale to 0 to prevent flashing before animation starts
+        m.scale.setValues(0.0, 0.0);
+        
+        await add(m);
+        groups.add({m});
+        
+        // Random delay between 0-200ms for sporadic appearance
+        int randomDelay = rng.nextInt(200);
+        m.animateAppear(delayMs: randomDelay);
+      }
+    }
+  }
+
+  Future<void> resetGame() async {
+    // Step 1: Animate all existing marbles out
+    final existingMarbles = children.whereType<Marble>().toList();
+    
+    // Start disappear animation for all marbles
+    final disappearFutures = <Future>[];
+    for (var marble in existingMarbles) {
+      disappearFutures.add(marble.animateDisappear());
+    }
+    
+    // Wait for all marbles to finish disappearing
+    await Future.wait(disappearFutures);
+    
+    // Step 2: Clean state - at this point all marbles should be removed
+    // but let's ensure cleanup
     children.whereType<Marble>().toList().forEach((marble) {
       marble.removeFromParent();
     });
-
+    
     // Clear groups and tracking
     groups.clear();
     usedColors.clear();
@@ -198,9 +295,12 @@ class MarbleGame extends FlameGame {
     for (var card in children.whereType<NeoCard>()) {
       card.isCorrect = false;
     }
+    
+    // Step 3: Small delay to ensure clean slate
+    await Future.delayed(const Duration(milliseconds: 50));
 
-    // Reinitialize game with new marble count
-    _initializeGame();
+    // Step 4: Reinitialize game with new marble count and spawn animations
+    await _initializeGameWithAnimation();
   }
 
   @override
@@ -375,7 +475,7 @@ class MarbleGame extends FlameGame {
     Set<Marble> oldGroup = findGroup(target);
 
     // Allow disbanding both single marbles and groups
-    if (oldGroup.length >= 1) {
+    if (oldGroup.isNotEmpty) {
       // Check if group was stuck to a card
       bool wasStuckToCard = stuckGroups.containsKey(oldGroup);
 
@@ -421,7 +521,9 @@ class MarbleGame extends FlameGame {
       } else {
         // Use normal scatter animation from center with reduced distance
         Vector2 center = Vector2.zero();
-        for (var m in oldGroup) center += m.position;
+        for (var m in oldGroup) {
+          center += m.position;
+        }
         center /= oldGroup.length.toDouble();
 
         for (var m in oldGroup) {
@@ -450,6 +552,12 @@ class MarbleGame extends FlameGame {
       for (int j = i + 1; j < allMarbles.length; j++) {
         Marble mA = allMarbles[i];
         Marble mB = allMarbles[j];
+        
+        // Skip collision detection for dying marbles
+        if (mA.isDying || mB.isDying) {
+          continue;
+        }
+        
         double dist = mA.position.distanceTo(mB.position);
 
         // Calculate dynamic distances based on marble radius

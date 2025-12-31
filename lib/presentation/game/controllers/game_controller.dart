@@ -34,12 +34,17 @@ class GameController extends GetxController {
   int get marbleCount => questionNumber.value;
 
   void resetGame() {
+    // Generate new question first
     generateRandomQuestion();
-    shouldResetGame.value = true;
-    // Reset the flag after a short delay
-    Future.delayed(const Duration(milliseconds: 100), () {
-      shouldResetGame.value = false;
-    });
+    
+    // Call async reset directly on the game instance
+    if (gameInstance != null) {
+      // Update the marble count on the game instance
+      gameInstance!.marbleCount = questionNumber.value;
+      
+      // Trigger the async reset animation
+      gameInstance!.resetGame();
+    }
   }
 
   void checkAnswer() {

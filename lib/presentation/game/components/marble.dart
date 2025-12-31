@@ -25,6 +25,7 @@ class Marble extends PositionComponent
   bool isChargingExplosion = false;
   bool isStuckToCard = false; // New flag for stuck marbles
   bool hasBeenDragged = false; // Track if marble has been dragged at least once
+  bool isDying = false; // Flag to mark marble as dying (should be ignored by physics)
   Color groupColor = Colors.purple; // Default color
 
   Marble({required double startX, required double startY, this.radius = 15.0})
@@ -218,5 +219,65 @@ class Marble extends PositionComponent
     isChargingExplosion = false;
     _chargingTimer = 0;
     if (!isBeingDragged) scale.setValues(1.0, 1.0);
+  }
+
+  /// Animate the marble disappearing (scale down to 0) and remove from parent
+  Future<void> animateDisappear() async {
+    isDying = true; // Mark as dying so collision detection ignores it
+    
+    const steps = 30;
+    const stepDuration = Duration(milliseconds: 10);
+    
+    for (int i = 0; i < steps; i++) {
+      if (!isMounted) return; // Safety check
+      
+      double progress = (i + 1) / steps;
+      double scaleValue = 1.0 - progress; // Scale from 1.0 to 0.0
+      scale.setValues(scaleValue, scaleValue);
+      
+      await Future.delayed(stepDuration);
+    }
+    
+    if (isMounted) {
+      removeFromParent();
+    }
+  }
+
+  /// Animate the marble appearing (scale up from 0 with elastic effect)
+  Future<void> animateAppear({int delayMs = 0}) async {
+    if (delayMs > 0) {
+      await Future.delayed(Duration(milliseconds: delayMs));
+    }
+    
+    // Start invisible
+    scale.setValues(0.0, 0.0);
+    
+    const steps = 40;
+    const stepDuration = Duration(milliseconds: 10);
+    
+    for (int i = 0; i < steps; i++) {
+      if (!isMounted) return; // Safety check
+      
+      double progress = (i + 1) / steps;
+      
+      // Elastic ease-out effect
+      double scaleValue;
+      if (progress < 0.7) {
+        // First 70%: normal scale up
+        scaleValue = progress / 0.7;
+      } else {
+        // Last 30%: overshoot and settle
+        double overshootProgress = (progress - 0.7) / 0.3;
+        scaleValue = 1.0 + (sin(overshootProgress * pi) * 0.2);
+      }
+      
+      scale.setValues(scaleValue, scaleValue);
+      await Future.delayed(stepDuration);
+    }
+    
+    // Ensure final scale is exactly 1.0
+    if (isMounted) {
+      scale.setValues(1.0, 1.0);
+    }
   }
 }
