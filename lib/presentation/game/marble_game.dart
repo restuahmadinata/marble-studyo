@@ -283,6 +283,35 @@ class MarbleGame extends FlameGame {
 
   // ==================== Game Control Methods ====================
 
+  /// Debug method to print current game state
+  void debugPrintGameState() {
+    final marbles = children.whereType<Marble>().toList();
+    print('🔍 [GAME STATE DEBUG] ==================');
+    print('🔍 Expected marble count: $marbleCount');
+    print('🔍 Actual marble count: ${marbles.length}');
+    print('🔍 Group count: ${groups.length}');
+
+    int visibleMarbles = 0;
+    int invisibleMarbles = 0;
+
+    for (int i = 0; i < marbles.length; i++) {
+      final marble = marbles[i];
+      final isVisible = marble.scale.x > 0.01 && marble.scale.y > 0.01;
+      if (isVisible) {
+        visibleMarbles++;
+      } else {
+        invisibleMarbles++;
+        print(
+          '⚠️ Marble ${i + 1}: INVISIBLE - scale: (${marble.scale.x}, ${marble.scale.y}), mounted: ${marble.isMounted}',
+        );
+      }
+    }
+
+    print('🔍 Visible marbles: $visibleMarbles');
+    print('🔍 Invisible marbles: $invisibleMarbles');
+    print('🔍 ======================================');
+  }
+
   /// Resets the game to a fresh state with new marbles.
   ///
   /// Animates existing marbles out, clears state, then animates new marbles in.
@@ -315,6 +344,8 @@ class MarbleGame extends FlameGame {
     // Reset cards
     for (var card in children.whereType<NeoCard>()) {
       card.isCorrect = false;
+      card.shouldGlint = false;
+      card.glintTimer = 0.0;
     }
 
     // Step 3: Small delay to ensure clean slate

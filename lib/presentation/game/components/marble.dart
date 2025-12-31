@@ -297,8 +297,22 @@ class Marble extends PositionComponent
   /// Parameters:
   /// - [delayMs]: Milliseconds to wait before starting animation
   Future<void> animateAppear({int delayMs = 0}) async {
+    // Wait for marble to be mounted (with timeout)
+    int mountWaitAttempts = 0;
+    while (!isMounted && mountWaitAttempts < 100) {
+      await Future.delayed(const Duration(milliseconds: 10));
+      mountWaitAttempts++;
+    }
+
+    if (!isMounted) {
+      return;
+    }
+
     if (delayMs > 0) {
       await Future.delayed(Duration(milliseconds: delayMs));
+      if (!isMounted) {
+        return;
+      }
     }
 
     // Start invisible
