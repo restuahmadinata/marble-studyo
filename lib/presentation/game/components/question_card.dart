@@ -2,13 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/game_controller.dart';
 import '../../../utils/responsive_utils.dart';
+import 'button.dart';
+import 'reset.dart';
+import 'slot_text.dart';
 
 /// A widget that displays the division question and equals sign.
 ///
 /// This component shows the current math problem at the top of the
 /// game area and includes a reset button for starting a new game.
-class QuestionEqualsCard extends StatelessWidget {
+class QuestionEqualsCard extends StatefulWidget {
   const QuestionEqualsCard({super.key});
+
+  @override
+  State<QuestionEqualsCard> createState() => _QuestionEqualsCardState();
+}
+
+class _QuestionEqualsCardState extends State<QuestionEqualsCard> {
+  /// Global key to access the AnimatedResetButton's state
+  final GlobalKey<ResetButtonState> _resetButtonKey =
+      GlobalKey<ResetButtonState>();
 
   // ==================== Build Methods ====================
 
@@ -59,10 +71,57 @@ class QuestionEqualsCard extends StatelessWidget {
   }
 
   /// Builds the centered question text showing the division problem.
+  ///
+  /// Uses SlotText for the dividend (first number) to create
+  /// an engaging animation when the question changes.
   Widget _buildQuestionText(
     GameController controller,
     ResponsiveUtils responsive,
   ) {
+    // Parse the question to separate dividend and divisor
+    // Format is "X ÷ Y" where X is dividend and Y is divisor
+    final parts = controller.questionText.split('÷');
+
+    if (parts.length == 2) {
+      final int dividend = int.tryParse(parts[0].trim()) ?? 0;
+      final String divisor = parts[1].trim();
+
+      return Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Animated dividend using SlotText
+            SlotText(
+              number: dividend,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: responsive.scaleFontSize(52.0),
+              ),
+            ),
+            SizedBox(width: responsive.scale(8)),
+            // Static division symbol
+            Text(
+              '÷',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: responsive.scaleFontSize(52.0),
+              ),
+            ),
+            SizedBox(width: responsive.scale(8)),
+            // Static divisor (no animation)
+            Text(
+              divisor,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: responsive.scaleFontSize(52.0),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Fallback to original text if parsing fails
     return Center(
       child: Text(
         controller.questionText,
@@ -78,15 +137,21 @@ class QuestionEqualsCard extends StatelessWidget {
   /// Builds the reset button in the top-right corner.
   ///
   /// When tapped, shows a confirmation dialog before resetting the game.
+  /// The button animates with a rotation when the reset is confirmed.
+  /// Button is disabled during reset animations to prevent spam.
   Widget _buildResetButton(BuildContext context, ResponsiveUtils responsive) {
+    final GameController controller = Get.find<GameController>();
+    
     return Positioned(
       top: 0,
       right: 0,
-      child: IconButton(
-        icon: const Icon(Icons.refresh, color: Colors.white),
-        iconSize: responsive.scale(28),
-        onPressed: () => _showResetDialog(context),
-      ),
+      child: Obx(() => ResetButton(
+        key: _resetButtonKey,
+        responsive: responsive,
+        onPressed: controller.isResetting.value 
+            ? null 
+            : () => _showResetDialog(context),
+      )),
     );
   }
 
@@ -229,6 +294,8 @@ class QuestionEqualsCard extends StatelessWidget {
           onTap: () {
             Navigator.of(dialogContext).pop();
             controller.resetGame();
+            // Trigger the reset button rotation animation
+            _resetButtonKey.currentState?.animate();
           },
           responsive: responsive,
         ),
@@ -236,41 +303,22 @@ class QuestionEqualsCard extends StatelessWidget {
     );
   }
 
-  /// Builds a styled dialog button.
+  /// Builds a styled dialog button with press animation.
   Widget _buildDialogButton({
     required String text,
     required Color color,
     required VoidCallback onTap,
     required ResponsiveUtils responsive,
   }) {
-    return GestureDetector(
+    return Button(
+      text: text,
+      color: color,
+      borderColor: const Color(0xFF5a1d8c),
+      textColor: Colors.black,
       onTap: onTap,
-      child: Container(
-        padding: responsive.scaleSymmetricPadding(24, 12),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(responsive.scaleRadius(8)),
-          border: Border.all(
-            color: const Color(0xFF5a1d8c),
-            width: responsive.scale(2),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF5a1d8c),
-              offset: Offset(responsive.scale(4), responsive.scale(4)),
-              blurRadius: 0,
-            ),
-          ],
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: responsive.scaleFontSize(16),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      responsive: responsive,
+      horizontalPadding: 24,
+      verticalPadding: 12,
     );
   }
 

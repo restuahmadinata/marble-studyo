@@ -308,7 +308,9 @@ class Marble extends PositionComponent
     const stepDuration = Duration(milliseconds: 10);
 
     for (int i = 0; i < steps; i++) {
-      if (!isMounted) return;
+      if (!isMounted) {
+        return;
+      }
 
       final double progress = (i + 1) / steps;
       final double scaleValue = _calculateElasticScale(progress);

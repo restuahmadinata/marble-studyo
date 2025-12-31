@@ -5,6 +5,7 @@ import '../game/marble_game.dart';
 import '../game/controllers/game_controller.dart';
 import '../game/components/question_card.dart';
 import '../game/components/instruction_card.dart';
+import '../game/components/button.dart';
 import '../../utils/responsive_utils.dart';
 
 /// The main game screen widget that hosts the marble grouping game.
@@ -145,46 +146,48 @@ class _GameScreenState extends State<GameScreen> {
 
   /// Builds the check answer button at the bottom of the screen.
   ///
-  /// Creates a styled button that triggers answer validation when tapped.
+  /// Creates a styled button with press animation that triggers answer
+  /// validation when tapped.
   Widget _buildCheckAnswerButton(ResponsiveUtils responsive) {
     return Positioned(
       bottom: responsive.scale(20),
       left: 0,
       right: 0,
       child: Center(
-        child: GestureDetector(
+        child: _CheckAnswerButton(
+          responsive: responsive,
           onTap: () => controller.checkAnswer(),
-          child: Container(
-            width: responsive.scaleWidth(300),
-            height: responsive.scaleHeight(60),
-            decoration: BoxDecoration(
-              color: const Color(0xFF83E4B8),
-              borderRadius: BorderRadius.circular(responsive.scaleRadius(30)),
-              border: Border.all(
-                color: const Color(0xFF5FB592),
-                width: responsive.scale(3),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF5FB592),
-                  offset: Offset(responsive.scale(6), responsive.scale(6)),
-                  blurRadius: 0,
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                'Check Answer',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: responsive.scaleFontSize(18),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
         ),
       ),
+    );
+  }
+}
+
+/// A custom check answer button with press animation.
+///
+/// This widget wraps the Button to provide
+/// the correct sizing and styling for the check answer button.
+class _CheckAnswerButton extends StatelessWidget {
+  /// The responsive utilities for scaling
+  final ResponsiveUtils responsive;
+
+  /// The callback function when the button is tapped
+  final VoidCallback onTap;
+
+  const _CheckAnswerButton({required this.responsive, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Button(
+      text: 'Check Answer',
+      color: const Color(0xFF83E4B8),
+      borderColor: const Color(0xFF5FB592),
+      textColor: Colors.black,
+      onTap: onTap,
+      responsive: responsive,
+      horizontalPadding: 100,
+      verticalPadding: 18,
+      borderRadius: 30,
     );
   }
 }

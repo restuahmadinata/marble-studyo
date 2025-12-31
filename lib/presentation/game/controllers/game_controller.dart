@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../marble_game.dart';
 import '../components/marble_card.dart';
 import '../../../utils/responsive_utils.dart';
+import '../components/button.dart';
 
 /// Controller for managing the marble grouping game state and logic.
 ///
@@ -24,6 +25,9 @@ class GameController extends GetxController {
 
   /// Flag to trigger game reset
   var shouldResetGame = false.obs;
+
+  /// Flag to prevent reset button spam during animations
+  var isResetting = false.obs;
 
   // ==================== Game Instance References ====================
 
@@ -64,15 +68,24 @@ class GameController extends GetxController {
 
   /// Resets the game to a new question.
   ///
-  /// Generates a new question and triggers game instance recreation.
-  void resetGame() {
+  /// Generates a new question and triggers the game's async reset animation.
+  /// Prevents multiple resets from being triggered simultaneously.
+  Future<void> resetGame() async {
+    // Prevent reset spam
+    if (isResetting.value) return;
+    
+    isResetting.value = true;
     generateRandomQuestion();
-    shouldResetGame.value = true;
 
-    // Reset the flag after a short delay to allow state update
-    Future.delayed(const Duration(milliseconds: 100), () {
-      shouldResetGame.value = false;
-    });
+    // Call the game instance's async reset directly
+    if (gameInstance != null) {
+      // Update marble count first
+      gameInstance!.marbleCount = questionNumber.value;
+      // Trigger async reset with animations and wait for completion
+      await gameInstance!.resetGame();
+    }
+    
+    isResetting.value = false;
   }
 
   // ==================== Answer Validation ====================
@@ -319,7 +332,7 @@ class GameController extends GetxController {
     );
   }
 
-  /// Builds a styled button for dialogs.
+  /// Builds a styled button for dialogs with press animation.
   Widget _buildDialogButton({
     required ResponsiveUtils responsive,
     required String text,
@@ -327,31 +340,15 @@ class GameController extends GetxController {
     required Color borderColor,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return Button(
+      text: text,
+      color: color,
+      borderColor: borderColor,
+      textColor: Colors.black,
       onTap: onTap,
-      child: Container(
-        padding: responsive.scaleSymmetricPadding(32, 12),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(responsive.scaleRadius(8)),
-          border: Border.all(color: borderColor, width: responsive.scale(2)),
-          boxShadow: [
-            BoxShadow(
-              color: borderColor,
-              offset: Offset(responsive.scale(4), responsive.scale(4)),
-              blurRadius: 0,
-            ),
-          ],
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: responsive.scaleFontSize(16),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      responsive: responsive,
+      horizontalPadding: 32,
+      verticalPadding: 12,
     );
   }
 

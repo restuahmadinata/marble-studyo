@@ -21,7 +21,7 @@ class MarbleGame extends FlameGame {
   // ==================== Public Properties ====================
 
   /// The total number of marbles to spawn
-  final int marbleCount;
+  int marbleCount;
 
   /// The divider for the division problem
   final int divider;
@@ -84,7 +84,7 @@ class MarbleGame extends FlameGame {
   @override
   FutureOr<void> onLoad() async {
     camera.viewfinder.visibleGameSize = size;
-    await _initializeGame();
+    await _initializeGameWithAnimation();
   }
 
   /// Sets the background color to transparent.
@@ -97,17 +97,9 @@ class MarbleGame extends FlameGame {
   ///
   /// This method:
   /// 1. Calculates responsive scaling
-  /// 2. Spawns marbles in random positions
+  /// 2. Spawns marbles without animation (used for non-animated initialization)
   /// 3. Creates the line layer for connections
   /// 4. Positions the three colored cards
-  Future<void> _initializeGame() async {
-    final double scaleFactor = _calculateScaleFactor();
-    final double dynamicRadius = _calculateMarbleRadius(scaleFactor);
-
-    await _spawnMarbles(dynamicRadius, scaleFactor);
-    _initializeLineLayer();
-    _initializeCards(scaleFactor);
-  }
 
   /// Calculates the responsive scale factor for UI elements.
   ///
@@ -144,40 +136,16 @@ class MarbleGame extends FlameGame {
     return dynamicRadius.clamp(8.0, 20.0);
   }
 
-  /// Spawns all marbles in random positions without overlapping.
+  /// Initializes game with sporadic spawn animations.
   ///
-  /// Uses a rejection sampling approach to ensure marbles don't spawn
-  /// too close to each other.
-  Future<void> _spawnMarbles(double radius, double scaleFactor) async {
-    final double minSpawnDistance = radius * 2.5;
-    final Random rng = Random();
+  /// Spawns marbles with random delays for a sporadic appearance effect.
+  Future<void> _initializeGameWithAnimation() async {
+    final double scaleFactor = _calculateScaleFactor();
+    final double dynamicRadius = _calculateMarbleRadius(scaleFactor);
 
-    // Calculate spawn boundaries
-    final double leftBoundary = 105.0 * scaleFactor;
-    final double rightMargin = 50.0 * scaleFactor;
-    final double topMargin = 150.0 * scaleFactor;
-    final double bottomMargin = 50.0 * scaleFactor;
-
-    for (int i = 0; i < marbleCount; i++) {
-      final Vector2? position = _findValidSpawnPosition(
-        leftBoundary,
-        rightMargin,
-        topMargin,
-        bottomMargin,
-        minSpawnDistance,
-        rng,
-      );
-
-      if (position != null) {
-        final Marble marble = Marble(
-          startX: position.x,
-          startY: position.y,
-          radius: radius,
-        );
-        add(marble);
-        groups.add({marble});
-      }
-    }
+    await _spawnMarblesWithAnimation(dynamicRadius, scaleFactor);
+    _initializeLineLayer();
+    _initializeCards(scaleFactor);
   }
 
   /// Finds a valid spawn position that doesn't overlap with existing marbles.
@@ -213,13 +181,65 @@ class MarbleGame extends FlameGame {
   }
 
   /// Checks if a position is valid (not too close to existing marbles).
+  ///
+  /// Skips dying marbles during position validation.
   bool _isPositionValid(Vector2 position, double minDistance) {
     for (var existing in children.whereType<Marble>()) {
+      // Skip dying marbles - they're on their way out
+      if (existing.isDying) continue;
+
       if (existing.position.distanceTo(position) < minDistance) {
         return false;
       }
     }
     return true;
+  }
+
+  /// Spawns marbles with animation and random delays.
+  ///
+  /// Creates a sporadic appearance effect by using random delays
+  /// between 0-200ms for each marble spawn.
+  Future<void> _spawnMarblesWithAnimation(
+    double radius,
+    double scaleFactor,
+  ) async {
+    final double minSpawnDistance = radius * 2.5;
+    final Random rng = Random();
+
+    // Calculate spawn boundaries
+    final double leftBoundary = 105.0 * scaleFactor;
+    final double rightMargin = 50.0 * scaleFactor;
+    final double topMargin = 150.0 * scaleFactor;
+    final double bottomMargin = 50.0 * scaleFactor;
+
+    for (int i = 0; i < marbleCount; i++) {
+      final Vector2? position = _findValidSpawnPosition(
+        leftBoundary,
+        rightMargin,
+        topMargin,
+        bottomMargin,
+        minSpawnDistance,
+        rng,
+      );
+
+      if (position != null) {
+        final Marble marble = Marble(
+          startX: position.x,
+          startY: position.y,
+          radius: radius,
+        );
+
+        // Set initial scale to 0 to prevent flashing before animation starts
+        marble.scale.setValues(0.0, 0.0);
+
+        await add(marble);
+        groups.add({marble});
+
+        // Random delay between 0-200ms for sporadic appearance
+        int randomDelay = rng.nextInt(200);
+        marble.animateAppear(delayMs: randomDelay);
+      }
+    }
   }
 
   /// Initializes the line layer component if not already added.
@@ -265,25 +285,43 @@ class MarbleGame extends FlameGame {
 
   /// Resets the game to a fresh state with new marbles.
   ///
-  /// Removes all existing marbles, clears groups, and reinitializes.
-  void resetGame() {
-    // Remove all marbles
-    children.whereType<Marble>().toList().forEach((marble) {
-      marble.removeFromParent();
-    });
+  /// Animates existing marbles out, clears state, then animates new marbles in.
+  /// This creates a smooth transition between game states.
+  Future<void> resetGame() async {
+    // Step 1: Animate all existing marbles out
+    final existingMarbles = children.whereType<Marble>().toList();
 
-    // Clear all tracking data
+    // Start disappear animation for all marbles
+    final disappearFutures = <Future>[];
+    for (var marble in existingMarbles) {
+      disappearFutures.add(marble.animateDisappear());
+    }
+
+    // Wait for all marbles to finish disappearing
+    await Future.wait(disappearFutures);
+
+    // Step 2: Clean state - at this point all marbles should be removed
+    // but let's ensure cleanup
+    final remainingMarbles = children.whereType<Marble>().toList();
+    for (var marble in remainingMarbles) {
+      marble.removeFromParent();
+    }
+
+    // Clear groups and tracking
     groups.clear();
     usedColors.clear();
     stuckGroups.clear();
 
-    // Reset all cards
+    // Reset cards
     for (var card in children.whereType<NeoCard>()) {
       card.isCorrect = false;
     }
 
-    // Reinitialize game
-    _initializeGame();
+    // Step 3: Small delay to ensure clean slate
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    // Step 4: Reinitialize game with new marble count and spawn animations
+    await _initializeGameWithAnimation();
   }
 
   // ==================== Group Management Methods ====================
