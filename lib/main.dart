@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Marble Grouping',
+      title: 'Marbleous',
       debugShowCheckedModeBanner: false,
       theme: _buildAppTheme(),
       home: const GameScreen(),

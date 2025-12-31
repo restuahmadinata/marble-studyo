@@ -1,5 +1,5 @@
-name: marble_studyo
-description: "i build this app for completing the assigment from studyo interview. i'm a little nervous about this but whatever, let's do the work!."
+name: marbleous
+description: "An interactive educational game that teaches division concepts through marble grouping mechanics."
 publish_to: 'none'
 version: 1.0.0+1
 

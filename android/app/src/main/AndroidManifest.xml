@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="marble_studyo"
+        android:label="Marbleous"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
