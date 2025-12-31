@@ -34,17 +34,12 @@ class GameController extends GetxController {
   int get marbleCount => questionNumber.value;
 
   void resetGame() {
-    // Generate new question first
     generateRandomQuestion();
-    
-    // Call async reset directly on the game instance
-    if (gameInstance != null) {
-      // Update the marble count on the game instance
-      gameInstance!.marbleCount = questionNumber.value;
-      
-      // Trigger the async reset animation
-      gameInstance!.resetGame();
-    }
+    shouldResetGame.value = true;
+    // Reset the flag after a short delay
+    Future.delayed(const Duration(milliseconds: 100), () {
+      shouldResetGame.value = false;
+    });
   }
 
   void checkAnswer() {
@@ -350,17 +345,25 @@ class GameController extends GetxController {
     final message = incorrectMessages[random.nextInt(incorrectMessages.length)];
 
     Get.dialog(
+      barrierDismissible: true,
       Builder(
         builder: (context) {
           final responsive = context.responsive;
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(responsive.scaleRadius(12)),
-              side: BorderSide(color: const Color(0xFF6B2424), width: responsive.scale(3)),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF8A3333),
+          return PopScope(
+            canPop: true,
+            onPopInvokedWithResult: (didPop, result) {
+              if (didPop) {
+                _glintIncorrectCards(expectedCount);
+              }
+            },
+            child: Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(responsive.scaleRadius(12)),
+                side: BorderSide(color: const Color(0xFF6B2424), width: responsive.scale(3)),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8A3333),
                 borderRadius: BorderRadius.circular(responsive.scaleRadius(12)),
                 border: Border.all(color: const Color(0xFF6B2424), width: responsive.scale(3)),
                 boxShadow: [
@@ -400,7 +403,6 @@ class GameController extends GetxController {
                   GestureDetector(
                     onTap: () {
                       Get.back();
-                      _pulseIncorrectCards(expectedCount);
                     },
                     child: Container(
                       padding: responsive.scaleSymmetricPadding(32, 12),
@@ -432,13 +434,14 @@ class GameController extends GetxController {
                 ],
               ),
             ),
+          ),
           );
         },
       ),
     );
   }
 
-  void _pulseIncorrectCards(int expectedCount) {
+  void _glintIncorrectCards(int expectedCount) {
     if (gameInstance == null) return;
 
     final cards = gameInstance!.children.whereType<NeoCard>().toList();
@@ -452,7 +455,7 @@ class GameController extends GetxController {
         }
       }
 
-      // Pulse if count is incorrect
+      // Glint if count is incorrect
       if (count != expectedCount) {
         card.startGlint();
       }
