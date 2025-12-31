@@ -40,6 +40,9 @@ class ResetButtonState extends State<ResetButton>
   /// Animation for the rotation degrees
   late Animation<double> _rotationAnimation;
 
+  /// Tracks whether the button is currently being pressed
+  bool _isPressed = false;
+
   // ==================== Lifecycle Methods ====================
 
   @override
@@ -86,12 +89,33 @@ class ResetButtonState extends State<ResetButton>
 
   // ==================== Event Handlers ====================
 
-  /// Handles button press.
+  /// Handles the press down event.
   ///
-  /// Calls the onPressed callback without triggering animation.
-  /// The animation should be triggered externally after a reset action.
-  void _handlePress() {
+  /// Updates the state to show the pressed animation.
+  void _handleTapDown(TapDownDetails details) {
+    setState(() {
+      _isPressed = true;
+    });
+  }
+
+  /// Handles the press up event.
+  ///
+  /// Returns the button to its default state and triggers the onPressed callback.
+  void _handleTapUp(TapUpDetails details) {
+    setState(() {
+      _isPressed = false;
+    });
     widget.onPressed?.call();
+  }
+
+  /// Handles the tap cancel event.
+  ///
+  /// Returns the button to its default state without triggering onPressed.
+  /// This occurs when the user moves their finger off the button.
+  void _handleTapCancel() {
+    setState(() {
+      _isPressed = false;
+    });
   }
 
   // ==================== Build Methods ====================
@@ -99,6 +123,18 @@ class ResetButtonState extends State<ResetButton>
   @override
   Widget build(BuildContext context) {
     final bool isEnabled = widget.onPressed != null;
+    
+    // Calculate the transform offset based on press state
+    // When pressed: move down and right by 4 pixels
+    // When not pressed: no offset
+    final double offsetX = _isPressed ? widget.responsive.scale(4) : 0;
+    final double offsetY = _isPressed ? widget.responsive.scale(4) : 0;
+
+    // Calculate shadow offset
+    // When pressed: no shadow (0, 0)
+    // When not pressed: shadow at (4, 4)
+    final double shadowX = _isPressed ? 0 : widget.responsive.scale(4);
+    final double shadowY = _isPressed ? 0 : widget.responsive.scale(4);
     
     return AnimatedBuilder(
       animation: _rotationAnimation,
@@ -108,12 +144,40 @@ class ResetButtonState extends State<ResetButton>
           child: child,
         );
       },
-      child: Opacity(
-        opacity: isEnabled ? 1.0 : 0.5,
-        child: IconButton(
-          icon: const Icon(Icons.refresh, color: Colors.white),
-          iconSize: widget.responsive.scale(28),
-          onPressed: isEnabled ? _handlePress : null,
+      child: GestureDetector(
+        onTapDown: isEnabled ? _handleTapDown : null,
+        onTapUp: isEnabled ? _handleTapUp : null,
+        onTapCancel: isEnabled ? _handleTapCancel : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeInOut,
+          transform: Matrix4.translationValues(offsetX, offsetY, 0),
+          padding: EdgeInsets.all(widget.responsive.scale(8)),
+          decoration: BoxDecoration(
+            color: const Color(0xFF7e4db8), // Purple color matching question cards
+            borderRadius: BorderRadius.circular(
+              widget.responsive.scaleRadius(8),
+            ),
+            border: Border.all(
+              color: const Color(0xFF5a1d8c),
+              width: widget.responsive.scale(2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF5a1d8c),
+                offset: Offset(shadowX, shadowY),
+                blurRadius: 0,
+              ),
+            ],
+          ),
+          child: Opacity(
+            opacity: isEnabled ? 1.0 : 0.5,
+            child: Icon(
+              Icons.refresh,
+              color: Colors.white,
+              size: widget.responsive.scale(28),
+            ),
+          ),
         ),
       ),
     );

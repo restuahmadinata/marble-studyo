@@ -143,7 +143,7 @@ class _QuestionEqualsCardState extends State<QuestionEqualsCard> {
     final GameController controller = Get.find<GameController>();
     
     return Positioned(
-      top: 0,
+      top: responsive.scale(12),
       right: 0,
       child: Obx(() => ResetButton(
         key: _resetButtonKey,
